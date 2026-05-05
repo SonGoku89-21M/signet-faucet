@@ -6,7 +6,9 @@ A simple web interface for the Signet faucet to onboard newbies.
 
 import os
 import random
-from flask import Flask, request, render_template_string, session, redirect, url_for
+import subprocess
+import json
+from flask import Flask, request, render_template_string, session, redirect, url_for, jsonify
 from bitcoinrpc.authproxy import AuthServiceProxy, JSONRPCException
 
 app = Flask(__name__)
@@ -39,6 +41,14 @@ def generate_captcha():
 
 def verify_captcha(user_input):
     return user_input.strip() == session.get('captcha', '')
+
+def generate_ln_captcha():
+    code = str(random.randint(1000, 9999))
+    session['ln_captcha'] = code
+    return code
+
+def verify_ln_captcha(user_input):
+    return user_input.strip() == session.get('ln_captcha', '')
 
 def send_coins(rpc, address):
     try:
@@ -628,8 +638,18 @@ HTML_TEMPLATE = """
             color: #777;
             line-height: 1.5;
         }
+        .ln-course-cards {
+            grid-template-columns: repeat(2, 1fr);
+        }
+        .ln-course-card {
+            border-color: rgba(33, 150, 196, 0.3);
+        }
+        .ln-course-card:hover {
+            border-color: #2196c4;
+            box-shadow: 0 6px 18px rgba(33,150,196,0.15);
+        }
         @media (max-width: 600px) {
-            .course-cards {
+            .course-cards, .ln-course-cards {
                 grid-template-columns: 1fr;
             }
         }
@@ -775,12 +795,21 @@ HTML_TEMPLATE = """
 <body>
     <div class="container">
         <h1>Signet Faucet Hub</h1>
+        <div id="homeIntro">
         <div class="intro-box">
             <strong>What is this?</strong> This is a Signet faucet — a tool that sends you free test Bitcoin so you can practise using it safely. Signet is a practice version of Bitcoin that works exactly the same way, but the coins have no real value. You can send, receive, and experiment freely without risking any money.
+            <br><br>
+            Amounts are often shown in <strong>sats</strong> (short for satoshis) — the smallest unit of Bitcoin. There are 100,000,000 sats in one Bitcoin, so 10,000 sats = 0.0001 BTC.
         </div>
         <div class="courses-section">
-            <h3>&#127891; New to Bitcoin? We recommend starting with these free courses:</h3>
-            <div class="course-cards">
+            <h3>&#127891; Free courses from PlanB Academy <span style="font-size:0.78rem; font-weight:400; color:#aaa; margin-left:6px;">— optional, explore at your own pace</span></h3>
+
+            <div style="display:flex; align-items:center; gap:8px; margin:0 0 10px;">
+                <span style="font-size:1rem;">&#8383;</span>
+                <span style="font-weight:600; font-size:0.9rem; color:#555;">Bitcoin — Beginner</span>
+                <span style="font-size:0.75rem; color:#f7931a; background:#fff3e0; padding:2px 8px; border-radius:10px; font-weight:600;">Start here</span>
+            </div>
+            <div class="course-cards" style="margin-bottom:20px;">
                 <a class="course-card" href="https://planb.academy/en/courses/the-bitcoin-journey-2b7dc507-81e3-4b70-88e6-41ed44239966" target="_blank">
                     <span class="course-num">Course 1</span>
                     <span class="course-title">The Bitcoin Journey</span>
@@ -800,8 +829,32 @@ HTML_TEMPLATE = """
                     <span class="course-desc">Run your own Bitcoin node — exactly what powers this faucet.</span>
                 </a>
             </div>
+
+            <div style="display:flex; align-items:center; gap:8px; margin:0 0 10px;">
+                <span style="font-size:1rem;">&#9889;</span>
+                <span style="font-weight:600; font-size:0.9rem; color:#555;">Lightning Network — Intermediate</span>
+                <span style="font-size:0.75rem; color:#2196c4; background:#e3f2fd; padding:2px 8px; border-radius:10px; font-weight:600;">Next step</span>
+            </div>
+            <div class="course-cards ln-course-cards">
+                <a class="course-card ln-course-card" href="https://planb.academy/en/courses/lightning-network-theory-34bd43ef-6683-4a5c-b239-7cb1e40a4aeb" target="_blank">
+                    <span class="course-num" style="color:#2196c4;">Course 4</span>
+                    <span class="course-title">Lightning Network Theory</span>
+                    <span style="font-size:0.75rem; color:#bbb;">↗ opens in new tab</span>
+                    <span class="course-desc">Understand how Lightning enables instant, near-free Bitcoin payments — payment channels, routing, HTLCs, and the network topology.</span>
+                </a>
+                <a class="course-card ln-course-card" href="https://planb.academy/en/courses/set-up-your-first-lightning-node-593e483e-1785-4e83-aa7e-32b99056844c" target="_blank">
+                    <span class="course-num" style="color:#2196c4;">Course 5</span>
+                    <span class="course-title">Set Up Your First Lightning Node</span>
+                    <span style="font-size:0.75rem; color:#bbb;">↗ opens in new tab</span>
+                    <span class="course-desc">Go hands-on — run your own Lightning node, open channels, and send your first Lightning payment on the network.</span>
+                </a>
+            </div>
         </div>
-        <p>Ready to get started? Choose a network below.</p>
+        <p>Ready to get started? Choose a network below. <span style="color:#888; font-size:0.9rem;">— Brand new? We recommend starting with <strong>Bitcoin</strong>. Lightning is more advanced and requires extra setup.</span></p>
+        <div style="text-align:center; margin:0 0 8px; font-size:0.83rem; color:#aaa;">
+            Stuck or have questions? <a href="https://planb.academy" target="_blank" style="color:#f7931a;">Visit PlanB Academy ↗</a> or ask your instructor directly.
+        </div>
+        </div>
 
         <div class="main-menu" id="homeMenu">
             <button class="menu-card" onclick="showSection('bitcoinSection')">
@@ -812,7 +865,8 @@ HTML_TEMPLATE = """
             <button class="menu-card" onclick="showSection('lightningSection')">
                 <h2>Lightning Signet Faucet</h2>
                 <div class="menu-icon">⚡</div>
-                <p class="subtext">Coming soon</p>
+                <p>Request instant test sats via a Lightning payment. Requires a Lightning wallet and a channel to our node.</p>
+                <p class="subtext">Intermediate — do Bitcoin first</p>
             </button>
         </div>
 
@@ -837,8 +891,228 @@ HTML_TEMPLATE = """
         <div class="section-wrapper hidden" id="lightningSection">
             <button class="back-button" onclick="showSection('homeMenu')">← Back</button>
             <h2>Lightning Signet Faucet</h2>
-            <div class="menu-icon">⚡</div>
-            <p>This feature is coming soon. Stay tuned for Lightning on Signet.</p>
+            <p>Do you already have a Lightning wallet that can receive on Signet?</p>
+            <div class="main-menu">
+                <button class="menu-card" onclick="showSection('lightningFaucetSection')">
+                    <h2>I have a wallet</h2>
+                    <div class="menu-icon">⚡</div>
+                    <p>I can generate a Lightning invoice and receive test sats.</p>
+                </button>
+                <button class="menu-card" onclick="showSection('lightningNewUserSection')">
+                    <h2>I'm new to Lightning</h2>
+                    <div class="menu-icon">🚀</div>
+                    <p>I need to set up a Lightning wallet first.</p>
+                </button>
+            </div>
+        </div>
+
+        <div class="section-wrapper hidden" id="lightningFaucetSection">
+            <button class="back-button" onclick="showSection('lightningSection')">← Back</button>
+            <h2>Lightning Signet Faucet</h2>
+            <div id="lnd-status" style="font-size:0.82rem; color:#aaa; margin:-4px 0 14px;">⚡ Checking node status...</div>
+            <p>Generate a Lightning invoice in your wallet and paste it below to receive up to <strong>10,000 test sats</strong> instantly.</p>
+            <form method="post" action="/lightning" autocomplete="off">
+                <label for="ln_invoice">Lightning Invoice (BOLT11):</label>
+                <textarea id="ln_invoice" name="ln_invoice" placeholder="lnbcrt1..." rows="4" required style="width:100%; box-sizing:border-box; font-family:monospace; font-size:0.82rem; padding:10px 12px; border:1px solid #ddd; border-radius:6px; resize:vertical; margin-bottom:6px;" oninput="previewInvoice(this.value)"></textarea>
+                <div id="invoicePreview" class="addr-preview" style="display:none; margin-bottom:8px;"></div>
+                <p style="font-size:0.85rem; color:#777; margin:0 0 14px;">Your Signet invoice starts with <code>lnbcrt</code>. Set an amount between 1 and 10,000 sats in your wallet before generating it. <a href="#" onclick="showSection('lightningNewUserSection'); return false;" style="font-size:0.82rem;">Don't have a wallet yet?</a></p>
+                <p class="captcha-label">Type the code below to confirm you're human:</p>
+                <div class="captcha-box">{{ ln_captcha_code }}</div>
+                <input type="text" id="ln_captcha" name="ln_captcha" placeholder="Enter the 4-digit code" maxlength="4" required autocomplete="off">
+                <button type="submit">Pay Invoice</button>
+            </form>
+            {% if ln_message %}
+            <div class="message {{ 'success' if ln_success else 'error' }} ln-message">
+                {{ ln_message }}
+                {% if ln_hint %}
+                <button class="hint-btn" onclick="toggleHint()">?</button>
+                {% endif %}
+            </div>
+            {% if ln_hint %}
+            <div class="hint-box" id="hintBox">{{ ln_hint }}</div>
+            {% endif %}
+            {% endif %}
+            <div style="background:#f0f7ff; border-left:4px solid #2196c4; border-radius:8px; padding:14px 18px; margin:18px 0;">
+                <strong>⚡ How Lightning payments work</strong>
+                <ul style="margin:8px 0 0; padding-left:20px; background:none; border:none; color:#555;">
+                    <li>Lightning payments are instant — no waiting for blocks</li>
+                    <li>Your wallet needs to be online and connected to the Signet Lightning network</li>
+                    <li>Invoices expire after a short time — generate a fresh one if payment fails</li>
+                    <li>Max per request: <strong>10,000 sats</strong></li>
+                </ul>
+            </div>
+            <div style="background:#f0fff4; border-left:4px solid #4caf50; border-radius:8px; padding:14px 18px; margin:16px 0;">
+                <strong>🎉 What can you do with your test sats?</strong>
+                <ul style="margin:8px 0 0; padding-left:20px; background:none; border:none; color:#555;">
+                    <li>Send a Lightning payment back — open your wallet and pay an invoice from a friend</li>
+                    <li>Try sending sats to a different Lightning wallet to feel how instant it is</li>
+                    <li>Experiment with creating invoices of different amounts</li>
+                    <li>These sats have no real value — make mistakes freely and learn how Lightning works</li>
+                </ul>
+            </div>
+        </div>
+
+        <div class="section-wrapper hidden" id="lightningNewUserSection">
+            <button class="back-button" onclick="showSection('lightningSection')">← Back</button>
+            <h2>New to Lightning Network?</h2>
+
+            <!-- Plain-English explainers -->
+            <div style="display:flex; flex-direction:column; gap:12px; margin:0 0 20px;">
+                <div style="background:#f0f7ff; border-left:4px solid #2196c4; border-radius:8px; padding:14px 18px;">
+                    <strong>⚡ What is Lightning?</strong>
+                    <p style="margin:8px 0 0; color:#444; font-size:0.9rem;">Regular Bitcoin transactions go into blocks that take around 10 minutes to confirm. Lightning is a second layer built on top of Bitcoin that lets you send payments <em>instantly</em> — no block waiting, almost no fee. It is the same bitcoin, just moved through a faster lane.</p>
+                </div>
+                <div style="background:#f0f7ff; border-left:4px solid #2196c4; border-radius:8px; padding:14px 18px;">
+                    <strong>🔗 What is a channel?</strong>
+                    <p style="margin:8px 0 0; color:#444; font-size:0.9rem;">Think of it like a tab at a bar. Instead of paying for every drink individually, you open a tab (the channel), spend freely back and forth, and settle at the end. Opening and closing a channel is a real Bitcoin transaction — but everything in between is instant. To receive Lightning payments, your wallet needs an open channel to someone who is already on the network — in this case, our faucet hub.</p>
+                </div>
+            </div>
+
+            <!-- Honest difficulty warning -->
+            <div style="background:#fff3cd; border-left:4px solid #f7931a; border-radius:8px; padding:14px 18px; margin:0 0 20px;">
+                <strong>⚠️ Heads up — this is not a beginner setup</strong>
+                <p style="margin:8px 0 6px; color:#555; font-size:0.9rem;">Unlike the Bitcoin faucet where you just need an address, Lightning on Signet requires three things that are all a bit technical:</p>
+                <ul style="margin:0; padding-left:20px; color:#555; font-size:0.9rem; line-height:1.8;">
+                    <li>A <strong>Lightning node</strong> running on your computer or server (software that speaks the Lightning protocol)</li>
+                    <li>An <strong>open channel</strong> from your node to our hub — your PlanB instructor sets this up for you</li>
+                    <li>A <strong>wallet app</strong> connected to that node so you can create invoices and see your balance</li>
+                </ul>
+                <p style="margin:10px 0 0; color:#555; font-size:0.9rem;">None of the popular mobile Lightning wallets (Phoenix, Breez, Wallet of Satoshi) support Signet — they only work on real Bitcoin. This is why the setup is more involved.</p>
+            </div>
+
+            <!-- Recommended path -->
+            <div style="background:#f0fff4; border-left:4px solid #4caf50; border-radius:8px; padding:14px 18px; margin:0 0 24px;">
+                <strong>✅ Recommended path if you are starting from scratch</strong>
+                <ol style="margin:10px 0 0; padding-left:20px; color:#444; font-size:0.9rem; line-height:2;">
+                    <li>Start with the <a href="#" onclick="showSection('bitcoinSection'); return false;" style="color:#4caf50;">Bitcoin Signet Faucet</a> first — get comfortable with basic on-chain transactions</li>
+                    <li>Take <a href="https://planb.academy/en/courses/lightning-network-theory-34bd43ef-6683-4a5c-b239-7cb1e40a4aeb" target="_blank" style="color:#4caf50;">Course 4 — Lightning Network Theory ↗</a> so the concepts below make sense</li>
+                    <li>Take <a href="https://planb.academy/en/courses/set-up-your-first-lightning-node-593e483e-1785-4e83-aa7e-32b99056844c" target="_blank" style="color:#4caf50;">Course 5 — Set Up Your First Lightning Node ↗</a> for hands-on node setup</li>
+                    <li>Come back here, follow the wallet guide below, and ask your instructor to open a channel</li>
+                </ol>
+            </div>
+
+            <!-- Glossary -->
+            <h3 style="margin:0 0 10px;">Terms you will encounter</h3>
+            <div style="display:flex; flex-direction:column; gap:8px; margin:0 0 24px;">
+                <div style="background:#f8f9fa; border-radius:8px; padding:12px 16px; font-size:0.875rem;">
+                    <strong>Lightning node</strong> — software (called LND or Core Lightning) that runs on your computer and connects to the Lightning Network. It holds your funds and handles payments.
+                </div>
+                <div style="background:#f8f9fa; border-radius:8px; padding:12px 16px; font-size:0.875rem;">
+                    <strong>Node pubkey</strong> — your node's unique address on the Lightning Network, like a phone number. You share it with others so they can open a channel to you.
+                </div>
+                <div style="background:#f8f9fa; border-radius:8px; padding:12px 16px; font-size:0.875rem;">
+                    <strong>Macaroon</strong> — a file that acts as an access key to your node, like a password. Wallet apps need it to connect and control the node on your behalf. Keep it private.
+                </div>
+                <div style="background:#f8f9fa; border-radius:8px; padding:12px 16px; font-size:0.875rem;">
+                    <strong>REST port</strong> — a number (usually 8080) that tells the wallet app where to reach your node over the network. Think of it as a door number on the same building.
+                </div>
+                <div style="background:#f8f9fa; border-radius:8px; padding:12px 16px; font-size:0.875rem;">
+                    <strong>Invoice (BOLT11)</strong> — a payment request you generate in your wallet. It encodes how many sats you want and where to send them. It starts with <code>lnbcrt</code> on Signet. Share it with the faucet and the payment arrives instantly.
+                </div>
+            </div>
+
+            <!-- Wallet guides -->
+            <h3 style="margin:0 0 10px;">Wallet options — pick one and follow the guide</h3>
+            <p style="font-size:0.875rem; color:#666; margin:0 0 14px;">All three options below require you to already have an LND node running on Signet. If you do not have one yet, work through Course 5 first.</p>
+            <div style="display:flex; flex-direction:column; gap:16px; margin:0 0 24px;">
+
+                <!-- Zeus -->
+                <details style="background:#f8f9fa; border:1px solid #e0e0e0; border-radius:10px; padding:0; overflow:hidden;">
+                    <summary style="padding:16px 18px; cursor:pointer; list-style:none; display:flex; align-items:center; gap:10px; flex-wrap:wrap; user-select:none;">
+                        <strong style="font-size:1rem;">Zeus Wallet</strong>
+                        <span style="font-size:0.78rem; color:#888; background:#e8f5e9; padding:2px 7px; border-radius:10px;">Mobile — Android &amp; iOS</span>
+                        <a href="https://zeusln.app" target="_blank" onclick="event.stopPropagation()" style="margin-left:auto; font-size:0.82rem; color:#f7931a; text-decoration:none; white-space:nowrap;">zeusln.app ↗</a>
+                        <span style="font-size:0.82rem; color:#aaa; margin-left:6px;">▼ How to connect</span>
+                    </summary>
+                    <div style="padding:0 18px 16px; border-top:1px solid #e8e8e8;">
+                        <p style="font-size:0.875rem; color:#555; margin:12px 0 4px;">Zeus is a mobile app that acts as the front-end for your LND node. It does <em>not</em> run a node by itself on Signet — it connects to your existing one over the network.</p>
+                        <p style="font-size:0.875rem; color:#555; margin:0 0 12px;"><strong>Before you start:</strong> make sure your LND node is running and reachable from your phone (same Wi-Fi network, or exposed via a domain/VPN).</p>
+                        <ol style="padding-left:20px; color:#444; font-size:0.875rem; line-height:1.9; margin:0;">
+                            <li>Download Zeus from the <a href="https://zeusln.app" target="_blank" style="color:#f7931a;">App Store or Google Play</a></li>
+                            <li>Open the app and tap <strong>Connect a node</strong> on the welcome screen</li>
+                            <li>Tap <strong>+ Add a new node</strong> and choose <strong>LND</strong> as the node type</li>
+                            <li>Enter the <strong>Host</strong> — the IP address or domain name of the computer running your LND node</li>
+                            <li>Set the <strong>REST port</strong> to <code>8080</code> (this is the default — the door number Zeus uses to talk to your node)</li>
+                            <li>Get your <strong>macaroon</strong> (the access key): on your node computer, run this command and copy the output: <code>xxd -p -c 256 ~/.lnd-signet/data/chain/bitcoin/signet/admin.macaroon</code></li>
+                            <li>Paste that long string of letters and numbers into the <strong>Admin Macaroon</strong> field in Zeus</li>
+                            <li>Turn <strong>SSL off</strong> if you are on the same local network, or on if you are connecting over the internet with a domain</li>
+                            <li>Tap <strong>Save node config</strong> — Zeus connects and shows your Signet balance</li>
+                            <li>Tap <strong>Receive</strong>, enter an amount (1–10,000 sats), and copy the invoice starting with <code>lnbcrt</code></li>
+                        </ol>
+                    </div>
+                </details>
+
+                <!-- Alby -->
+                <details style="background:#f8f9fa; border:1px solid #e0e0e0; border-radius:10px; padding:0; overflow:hidden;">
+                    <summary style="padding:16px 18px; cursor:pointer; list-style:none; display:flex; align-items:center; gap:10px; flex-wrap:wrap; user-select:none;">
+                        <strong style="font-size:1rem;">Alby</strong>
+                        <span style="font-size:0.78rem; color:#888; background:#e3f2fd; padding:2px 7px; border-radius:10px;">Browser — Chrome &amp; Firefox</span>
+                        <a href="https://getalby.com" target="_blank" onclick="event.stopPropagation()" style="margin-left:auto; font-size:0.82rem; color:#f7931a; text-decoration:none; white-space:nowrap;">getalby.com ↗</a>
+                        <span style="font-size:0.82rem; color:#aaa; margin-left:6px;">▼ How to connect</span>
+                    </summary>
+                    <div style="padding:0 18px 16px; border-top:1px solid #e8e8e8;">
+                        <p style="font-size:0.875rem; color:#555; margin:12px 0 4px;">Alby is a browser extension that sits in your browser toolbar and connects to your LND node. Good choice if you prefer to work on a desktop computer rather than a phone.</p>
+                        <p style="font-size:0.875rem; color:#555; margin:0 0 12px;"><strong>Before you start:</strong> your LND node must be running and reachable from the computer where the browser is installed.</p>
+                        <ol style="padding-left:20px; color:#444; font-size:0.875rem; line-height:1.9; margin:0;">
+                            <li>Install the Alby extension from <a href="https://getalby.com" target="_blank" style="color:#f7931a;">getalby.com</a> — click Add to Chrome or Add to Firefox</li>
+                            <li>Click the Alby icon in your browser toolbar, then click <strong>Get started</strong></li>
+                            <li>Choose <strong>Connect to your own wallet</strong> and select <strong>LND</strong> from the list</li>
+                            <li>In the <strong>LND REST URL</strong> field, enter your node's address and REST port — for example <code>http://127.0.0.1:8080</code> if the node is on the same machine, or <code>https://yourdomain.com:8080</code> if it is remote</li>
+                            <li>Get your <strong>macaroon</strong> (the access key) by running on your node: <code>xxd -p -c 256 ~/.lnd-signet/data/chain/bitcoin/signet/admin.macaroon</code> — paste the output into the <strong>Admin Macaroon</strong> field</li>
+                            <li>Click <strong>Connect</strong> — Alby will show your Signet node balance in the toolbar</li>
+                            <li>Click the Alby icon → <strong>Receive</strong> → enter an amount (1–10,000 sats) → copy the <code>lnbcrt...</code> invoice</li>
+                        </ol>
+                    </div>
+                </details>
+
+                <!-- LND + RTL / ThunderHub -->
+                <details style="background:#f8f9fa; border:1px solid #e0e0e0; border-radius:10px; padding:0; overflow:hidden;">
+                    <summary style="padding:16px 18px; cursor:pointer; list-style:none; display:flex; align-items:center; gap:10px; flex-wrap:wrap; user-select:none;">
+                        <strong style="font-size:1rem;">LND + RTL / ThunderHub</strong>
+                        <span style="font-size:0.78rem; color:#888; background:#fce4ec; padding:2px 7px; border-radius:10px;">Desktop — web dashboard</span>
+                        <span style="margin-left:auto; display:flex; gap:10px;">
+                            <a href="https://github.com/lightningnetwork/lnd" target="_blank" onclick="event.stopPropagation()" style="font-size:0.82rem; color:#f7931a; text-decoration:none; white-space:nowrap;">LND ↗</a>
+                            <a href="https://github.com/Ride-The-Lightning/RTL" target="_blank" onclick="event.stopPropagation()" style="font-size:0.82rem; color:#f7931a; text-decoration:none; white-space:nowrap;">RTL ↗</a>
+                            <a href="https://thunderhub.io" target="_blank" onclick="event.stopPropagation()" style="font-size:0.82rem; color:#f7931a; text-decoration:none; white-space:nowrap;">ThunderHub ↗</a>
+                        </span>
+                        <span style="font-size:0.82rem; color:#aaa; margin-left:6px;">▼ How to set up</span>
+                    </summary>
+                    <div style="padding:0 18px 16px; border-top:1px solid #e8e8e8;">
+                        <p style="font-size:0.875rem; color:#555; margin:12px 0 4px;">This option means running LND (the node software) yourself and managing it through a web dashboard — either RTL or ThunderHub. Both give you a visual interface for channels, payments, and invoices without needing to type commands.</p>
+                        <p style="font-size:0.875rem; color:#555; margin:0 0 12px;"><strong>Before you start:</strong> you need a Bitcoin Signet node already running and synced (like Bitcoin Core on Signet). LND sits on top of it.</p>
+                        <ol style="padding-left:20px; color:#444; font-size:0.875rem; line-height:1.9; margin:0 0 12px;">
+                            <li>Download LND from <a href="https://github.com/lightningnetwork/lnd/releases" target="_blank" style="color:#f7931a;">github.com/lightningnetwork/lnd/releases</a> — pick the zip for your operating system</li>
+                            <li>Create a config file at <code>~/.lnd/lnd.conf</code> — this tells LND to use Signet and where to find the Bitcoin node. Replace <code>YOUR_RPC_USER</code> and <code>YOUR_RPC_PASS</code> with the values from your Bitcoin node config:</li>
+                        </ol>
+                        <pre style="background:#1e1e1e; color:#d4d4d4; padding:12px 14px; border-radius:8px; font-size:0.8rem; overflow-x:auto; margin:0 0 12px;">[Bitcoin]
+bitcoin.active=1
+bitcoin.signet=1
+bitcoin.node=bitcoind
+
+[Bitcoind]
+bitcoind.rpchost=127.0.0.1
+bitcoind.rpcuser=YOUR_RPC_USER
+bitcoind.rpcpass=YOUR_RPC_PASS
+bitcoind.zmqpubrawblock=tcp://127.0.0.1:28332
+bitcoind.zmqpubrawtx=tcp://127.0.0.1:28333</pre>
+                        <ol start="3" style="padding-left:20px; color:#444; font-size:0.875rem; line-height:1.9; margin:0;">
+                            <li>Start LND by running <code>lnd</code> in a terminal — the first time it will wait for you to create a wallet</li>
+                            <li>In a second terminal, run <code>lncli create</code> and follow the prompts to set a password and generate your seed words (write these down safely)</li>
+                            <li>Find your <strong>node pubkey</strong> (your Lightning address) by running: <code>lncli --lnddir=~/.lnd-signet getinfo | grep identity_pubkey</code> — share this with your PlanB instructor so they can open a channel to you</li>
+                            <li>Install either <a href="https://github.com/Ride-The-Lightning/RTL" target="_blank" style="color:#f7931a;"><strong>RTL</strong></a> or <a href="https://thunderhub.io" target="_blank" style="color:#f7931a;"><strong>ThunderHub</strong></a> and point it at your LND REST port (8080) — both give you a dashboard where you can click <strong>Receive</strong> to create an invoice</li>
+                        </ol>
+                    </div>
+                </details>
+
+            </div>
+
+            <h3 style="margin:0 0 10px;">Final steps once your node and channel are ready</h3>
+            <ol style="padding-left:20px; color:#444; line-height:1.8;">
+                <li>Open your wallet app (Zeus, Alby, or RTL/ThunderHub) and go to <strong>Receive</strong></li>
+                <li>Enter an amount between <strong>1 and 10,000 sats</strong> and create the invoice</li>
+                <li>Copy the invoice — it starts with <code>lnbcrt</code></li>
+                <li><a href="#" onclick="showSection('lightningFaucetSection'); return false;">Go to the Lightning faucet →</a> and paste it there — payment arrives instantly</li>
+            </ol>
         </div>
 
         <div class="section-wrapper hidden" id="faucetSection">
@@ -2202,16 +2476,54 @@ addnode=86.104.228.47:38333</pre>
                 selectOS(localStorage.getItem('preferred-os') || detectOS());
                 selectNode(localStorage.getItem('preferred-node') || 'core');
             } catch(e) { selectOS('windows'); selectNode('core'); }
+            fetch('/api/status')
+                .then(r => r.json())
+                .then(data => {
+                    const el = document.getElementById('lnd-status');
+                    if (!el) return;
+                    if (data.lnd) {
+                        el.innerHTML = '<span style="color:#4caf50;">⚡ Lightning node: online</span>';
+                    } else {
+                        el.innerHTML = '<span style="color:#e53935;">⚠ Lightning node: offline — payments may not work right now</span>';
+                    }
+                })
+                .catch(() => {
+                    const el = document.getElementById('lnd-status');
+                    if (el) el.innerHTML = '<span style="color:#aaa;">⚡ Node status unknown</span>';
+                });
             if (document.getElementById('successOverlay')) {
                 const addrField = document.getElementById('address');
                 if (addrField) { addrField.value = ''; previewAddress(''); }
                 launchFireworks();
                 setTimeout(closePopup, 5000);
                 showSection('faucetSection');
+            } else if (document.querySelector('.ln-message')) {
+                showSection('lightningFaucetSection');
             } else if (document.getElementById('hintBox') || document.querySelector('.message')) {
                 showSection('faucetSection');
             }
         });
+        function previewInvoice(val) {
+            const el = document.getElementById('invoicePreview');
+            if (!el) return;
+            const v = val.trim();
+            if (!v) { el.style.display = 'none'; return; }
+            el.style.display = 'block';
+            const lower = v.toLowerCase();
+            if (lower.startsWith('lnbcrt') && v.length > 20) {
+                el.className = 'addr-preview ok';
+                el.textContent = '✓ Looks like a valid Signet invoice';
+            } else if (lower.startsWith('lnbc') && !lower.startsWith('lnbcrt')) {
+                el.className = 'addr-preview bad';
+                el.textContent = '⚠ This looks like a mainnet Lightning invoice (lnbc...) — Signet invoices start with lnbcrt.';
+            } else if (lower.startsWith('lntb')) {
+                el.className = 'addr-preview bad';
+                el.textContent = '⚠ This looks like a testnet invoice (lntb...) — Signet invoices start with lnbcrt.';
+            } else {
+                el.className = 'addr-preview bad';
+                el.textContent = '⚠ A Signet Lightning invoice should start with lnbcrt.';
+            }
+        }
         function previewAddress(val) {
             const el = document.getElementById('addrPreview');
             if (!el) return;
@@ -2285,7 +2597,7 @@ addnode=86.104.228.47:38333</pre>
             });
         }
         function hideAllSections() {
-            ['homeMenu','bitcoinSection','lightningSection','faucetSection','newUserSection','sparrowSection','guideSection'].forEach(id => {
+            ['homeMenu','bitcoinSection','lightningSection','lightningFaucetSection','lightningNewUserSection','faucetSection','newUserSection','sparrowSection','guideSection'].forEach(id => {
                 document.getElementById(id).classList.add('hidden');
             });
         }
@@ -2293,6 +2605,7 @@ addnode=86.104.228.47:38333</pre>
             hideAllSections();
             const el = document.getElementById(id);
             el.classList.remove('hidden');
+            document.getElementById('homeIntro').style.display = (id === 'homeMenu') ? '' : 'none';
             el.scrollIntoView({ behavior: 'smooth', block: 'start' });
         }
     </script>
@@ -2348,8 +2661,98 @@ def faucet():
     message = result['message'] if result else None
     hint = result['hint'] if result else None
     success = result['success'] if result else False
+
+    ln_result = session.pop('ln_result', None)
+    ln_message = ln_result['message'] if ln_result else None
+    ln_hint = ln_result['hint'] if ln_result else None
+    ln_success = ln_result['success'] if ln_result else False
+
     captcha_code = generate_captcha()
-    return render_template_string(HTML_TEMPLATE, message=message, hint=hint, success=success, captcha_code=captcha_code)
+    ln_captcha_code = generate_ln_captcha()
+    return render_template_string(HTML_TEMPLATE, message=message, hint=hint, success=success,
+                                  captcha_code=captcha_code, ln_message=ln_message,
+                                  ln_hint=ln_hint, ln_success=ln_success,
+                                  ln_captcha_code=ln_captcha_code)
+
+LNCLI_BASE = ['lncli', '--lnddir=/home/gabor/.lnd-signet', '--rpcserver=127.0.0.1:10010']
+
+@app.route('/api/status')
+def api_status():
+    bitcoin_ok = False
+    try:
+        rpc = get_rpc_connection()
+        rpc.getblockchaininfo()
+        bitcoin_ok = True
+    except Exception:
+        pass
+    lnd_ok = False
+    try:
+        result = subprocess.run(LNCLI_BASE + ['getinfo'], capture_output=True, text=True, timeout=5)
+        lnd_ok = result.returncode == 0
+    except Exception:
+        pass
+    return jsonify({'bitcoin': bitcoin_ok, 'lnd': lnd_ok})
+LN_MAX_SATS = 10000
+
+@app.route('/lightning', methods=['POST'])
+def lightning_pay():
+    invoice = request.form.get('ln_invoice', '').strip()
+    captcha_input = request.form.get('ln_captcha', '')
+
+    if not verify_ln_captcha(captcha_input):
+        session['ln_result'] = {'message': 'Incorrect code. Please try again.', 'hint': 'Look at the 4-digit code displayed above the input box and type it exactly.', 'success': False}
+        return redirect(url_for('faucet'))
+
+    if not invoice:
+        session['ln_result'] = {'message': 'Please paste a Lightning invoice.', 'hint': 'Open your Lightning wallet, go to Receive, enter an amount, and copy the invoice string.', 'success': False}
+        return redirect(url_for('faucet'))
+
+    if not invoice.lower().startswith('lnbcrt'):
+        session['ln_result'] = {'message': 'Invalid invoice. This faucet only accepts Signet invoices (starting with lnbcrt).', 'hint': 'Make sure your Lightning wallet is set to Signet mode. Mainnet invoices start with lnbc and are not accepted here.', 'success': False}
+        return redirect(url_for('faucet'))
+
+    try:
+        decode_proc = subprocess.run(
+            LNCLI_BASE + ['decodepayreq', invoice],
+            capture_output=True, text=True, timeout=10
+        )
+        if decode_proc.returncode != 0:
+            err = decode_proc.stderr.strip() or 'Unknown error'
+            session['ln_result'] = {'message': f'Invalid invoice: {err}', 'hint': 'The invoice may be expired or malformed. Generate a fresh invoice in your wallet and try again.', 'success': False}
+            return redirect(url_for('faucet'))
+
+        decoded = json.loads(decode_proc.stdout)
+        num_satoshis = int(decoded.get('num_satoshis', 0))
+
+        if num_satoshis == 0:
+            session['ln_result'] = {'message': 'Please set an amount in your wallet before generating the invoice.', 'hint': 'Zero-amount invoices are not supported. Enter an amount between 1 and 10,000 sats in the Receive screen of your wallet, then copy the invoice.', 'success': False}
+            return redirect(url_for('faucet'))
+
+        if num_satoshis > LN_MAX_SATS:
+            session['ln_result'] = {'message': f'Invoice amount ({num_satoshis:,} sats) exceeds the maximum of {LN_MAX_SATS:,} sats per request.', 'hint': f'Generate a new invoice for {LN_MAX_SATS:,} sats or less.', 'success': False}
+            return redirect(url_for('faucet'))
+
+        pay_proc = subprocess.run(
+            LNCLI_BASE + ['payinvoice', '--force', invoice],
+            capture_output=True, text=True, timeout=60
+        )
+
+        if pay_proc.returncode != 0:
+            err = pay_proc.stderr.strip() or pay_proc.stdout.strip() or 'Payment failed'
+            session['ln_result'] = {'message': f'Payment failed: {err}', 'hint': 'This can happen if there is no route to your wallet. Make sure your wallet is online and has an open channel to our Signet hub. Try generating a fresh invoice.', 'success': False}
+            return redirect(url_for('faucet'))
+
+        session['ln_result'] = {'message': f'Sent {num_satoshis:,} sats! Check your Lightning wallet — it should arrive instantly.', 'hint': 'If the sats do not appear, make sure your wallet app is open and online. Lightning payments are instant but require both sides to be connected.', 'success': True}
+
+    except subprocess.TimeoutExpired:
+        session['ln_result'] = {'message': 'Payment timed out. The Lightning node may be busy.', 'hint': 'Try again in a moment. If the problem persists, the node may be restarting.', 'success': False}
+    except (json.JSONDecodeError, KeyError, ValueError) as e:
+        session['ln_result'] = {'message': 'Failed to decode invoice. It may be malformed.', 'hint': 'Try generating a fresh invoice in your wallet. Make sure your wallet is on the Signet network.', 'success': False}
+    except Exception as e:
+        session['ln_result'] = {'message': f'Error: {str(e)}', 'hint': 'An unexpected error occurred. Please try again.', 'success': False}
+
+    return redirect(url_for('faucet'))
+
 
 if __name__ == '__main__':
     app.run(host='0.0.0.0', port=5000, debug=False)
