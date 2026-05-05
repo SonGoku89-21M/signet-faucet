@@ -334,6 +334,28 @@ HTML_TEMPLATE = """
             color: #555;
             margin-left: 3px;
         }
+        .mock-titlebar-win {
+            background: #0078D4; color: white;
+            padding: 5px 10px; font-size: 0.8rem;
+            display: flex; align-items: center; justify-content: space-between;
+        }
+        .mock-titlebar-mac {
+            background: #e0e0e0; border-bottom: 1px solid #bbb;
+            padding: 7px 12px; font-size: 0.8rem; color: #555;
+            display: flex; align-items: center; gap: 6px;
+        }
+        .mock-titlebar-linux {
+            background: #2d2d2d; color: #ccc;
+            padding: 5px 12px; font-size: 0.78rem;
+            display: flex; align-items: center; gap: 6px;
+        }
+        .mock-body { background: white; padding: 16px 18px; font-size: 0.85rem; }
+        .mock-terminal { background: #1e1e1e; color: #d4d4d4; padding: 12px 14px; font-family: monospace; font-size: 0.82rem; line-height: 1.7; }
+        .mock-dot { width: 12px; height: 12px; border-radius: 50%; display: inline-block; flex-shrink: 0; }
+        .mock-btn { padding: 4px 14px; border-radius: 3px; font-size: 0.82rem; cursor: default; font-family: inherit; border: none; }
+        .mock-btn-blue { background: #0078D4; color: white; }
+        .mock-btn-grey { background: #e0e0e0; color: #333; border: 1px solid #bbb !important; }
+        .mock-btn-mac { background: #007AFF; color: white; border-radius: 6px; }
         .ui-menubar {
             background: #f5f5f5;
             padding: 3px 10px;
@@ -729,6 +751,25 @@ HTML_TEMPLATE = """
             margin: 10px 0;
             font-size: 0.9rem;
         }
+        .zoomable { cursor: zoom-in; transition: opacity 0.15s; }
+        .zoomable:hover { opacity: 0.9; }
+        #lightbox {
+            display: none; position: fixed; inset: 0; z-index: 9999;
+            background: rgba(0,0,0,0.85); cursor: zoom-out;
+            align-items: center; justify-content: center;
+        }
+        #lightbox.open { display: flex; }
+        #lightbox img {
+            max-width: 92vw; max-height: 92vh;
+            border-radius: 8px; box-shadow: 0 8px 40px rgba(0,0,0,0.6);
+            animation: lb-in 0.15s ease;
+        }
+        #lightbox-close {
+            position: absolute; top: 16px; right: 22px;
+            color: white; font-size: 2rem; font-weight: 300;
+            cursor: pointer; line-height: 1; user-select: none;
+        }
+        @keyframes lb-in { from { transform: scale(0.92); opacity:0; } to { transform: scale(1); opacity:1; } }
     </style>
 </head>
 <body>
@@ -824,7 +865,29 @@ HTML_TEMPLATE = """
             <div class="hint-box" id="hintBox">{{ hint }}</div>
             {% endif %}
             {% endif %}
-            <p>Explore transactions on <a href="https://explorer.bc-2.jp/" target="_blank">Signet Explorer</a> or <a href="https://mempool.space/signet/" target="_blank">Mempool Space</a></p>
+            <div style="background:#fff; border:1px solid #e0e0e0; border-radius:10px; padding:18px 20px; margin:18px 0;">
+                <p style="margin:0 0 12px; font-weight:600; font-size:1rem;">&#128269; Check your transaction</p>
+                <p style="margin:0 0 14px; font-size:0.88rem; color:#555;">Once sent, paste your Transaction ID (TXID) into one of these explorers to watch it confirm in real time:</p>
+                <div style="display:flex; gap:12px; flex-wrap:wrap;">
+                    <a href="https://mempool-signet.planb.academy" target="_blank" style="flex:1; min-width:180px; display:flex; align-items:center; gap:10px; background:#1d1d1d; color:#fff; border-radius:8px; padding:12px 16px; text-decoration:none; font-weight:500; font-size:0.9rem;">
+                        <span style="font-size:1.4rem;">⚡</span>
+                        <span>
+                            <span style="display:block; font-size:0.75rem; color:#aaa; font-weight:400;">PlanB Signet</span>
+                            Mempool Explorer
+                        </span>
+                        <span style="margin-left:auto; color:#888; font-size:0.8rem;">↗</span>
+                    </a>
+                    <a href="https://mempool.space/signet/" target="_blank" style="flex:1; min-width:180px; display:flex; align-items:center; gap:10px; background:#f8f8f8; color:#222; border:1px solid #ddd; border-radius:8px; padding:12px 16px; text-decoration:none; font-weight:500; font-size:0.9rem;">
+                        <span style="font-size:1.4rem;">🔍</span>
+                        <span>
+                            <span style="display:block; font-size:0.75rem; color:#888; font-weight:400;">Public Signet</span>
+                            mempool.space
+                        </span>
+                        <span style="margin-left:auto; color:#888; font-size:0.8rem;">↗</span>
+                    </a>
+                </div>
+                <p style="margin:10px 0 0; font-size:0.78rem; color:#888;">&#9432;&nbsp; The PlanB explorer shows our custom Signet chain. mempool.space shows the public Signet — use it only if your wallet connects to the public network.</p>
+            </div>
             <div style="background:#f0fff4; border-left:4px solid #4caf50; border-radius:8px; padding:14px 18px; margin:16px 0;">
                 <strong>&#127381; What can you do with your test coins?</strong>
                 <ul style="margin:8px 0 0; padding-left:20px; background:none; border:none; color:#555;">
@@ -885,37 +948,484 @@ HTML_TEMPLATE = """
             </div>
 
             <p style="margin-top:20px;"><strong>Step 1 — Download and install Sparrow Wallet</strong></p>
-            <p>Go to <a href="https://sparrowwallet.com/download/" target="_blank">sparrowwallet.com/download</a> and download the version for your system. Here is what to look for and how to install it:</p>
+            <p>Go to <a href="https://sparrowwallet.com/download/" target="_blank">sparrowwallet.com/download ↗</a> and download the version for your system. Follow the pictures below — they show exactly what you will see at every stage, including what to click and where to find things.</p>
 
-            <div data-os="windows" style="margin-top:10px;">
-                <ul>
-                    <li>Download the <code>.exe</code> installer</li>
-                    <li>Run it and click through the installer — you can leave all default options as they are</li>
-                    <li>Once installed, open <strong>Sparrow Wallet</strong> from the Start menu</li>
-                </ul>
-                <div class="os-warning">&#128272; <strong>Windows Defender warning:</strong> Windows may flag the installer as unknown software. This is normal for open-source apps. You can verify the download is genuine using the checksum listed on the Sparrow download page. Click <em>More info → Run anyway</em> to proceed.</div>
-            </div>
-            <div data-os="macos" style="margin-top:10px;">
-                <ul>
-                    <li>Download the <code>.dmg</code> file</li>
-                    <li>Open the .dmg, then drag the Sparrow app into your Applications folder</li>
-                    <li>First time you open it, macOS may say "unidentified developer" — right-click the app icon and choose <strong>Open</strong> to bypass this once</li>
-                </ul>
-            </div>
-            <div data-os="linux" style="margin-top:10px;">
-                <ul>
-                    <li>Download the <code>.deb</code> package (for Debian/Ubuntu) or the <code>.tar.gz</code> archive for other distributions</li>
-                    <li>For the .deb package, install it with:</li>
-                </ul>
-                <div style="background:#f8f9fa; padding:8px 10px; border-radius:5px; margin:8px 0; position:relative;">
-                    <pre id="sparrow-deb" style="margin:0; font-size:0.85rem;">sudo dpkg -i sparrow-*.deb</pre>
-                    <button onclick="copyToClipboard('sparrow-deb')" style="position:absolute; top:6px; right:8px; background:#f7931a; color:white; border:none; padding:4px 8px; border-radius:3px; cursor:pointer; font-size:0.8rem;">Copy</button>
+            <!-- ===== WINDOWS ===== -->
+            <div data-os="windows" style="margin-top:12px;">
+                <div class="ui-guide">
+
+                    <div class="ui-step">
+                        <div class="ui-step-label">1</div>
+                        <div class="ui-step-content">
+                            <p><strong>Open your browser and go to the Sparrow download page.</strong><br>
+                            Type <strong>sparrowwallet.com/download</strong> in the address bar at the top of your browser and press Enter. Scroll down until you see the Windows section, then click the <strong>Windows Installer</strong> download link.</p>
+                            <img class="zoomable" src="/static/sparrow-download-page.png" alt="Sparrow download page" style="width:100%; max-width:520px; border-radius:8px; border:1px solid #ddd; display:block; margin:10px 0;">
+                        </div>
+                    </div>
+
+                    <div class="ui-step">
+                        <div class="ui-step-label">2</div>
+                        <div class="ui-step-content">
+                            <p><strong>Find the downloaded file.</strong><br>
+                            After downloading, your browser shows a bar at the bottom of the screen (Chrome/Edge) or a downloads icon at the top right (Firefox). Click <strong>Open file</strong> to run it straight away — or open <strong>File Explorer</strong>, click <strong>Downloads</strong> on the left, and double-click the file there.</p>
+                            <div style="display:flex; gap:12px; flex-wrap:wrap; margin:10px 0; align-items:flex-start;">
+                                <div>
+                                    <div style="font-size:0.78rem; color:#888; margin-bottom:5px;">Browser download bar (bottom of screen):</div>
+                                    <div class="ui-mockup" style="max-width:360px;">
+                                        <div style="background:#323639; padding:8px 14px; display:flex; align-items:center; justify-content:space-between; gap:10px;">
+                                            <div style="display:flex; align-items:center; gap:8px;">
+                                                <img src="/static/sparrow-logo.png" alt="Sparrow" style="width:20px; height:20px;">
+                                                <div>
+                                                    <div style="color:white; font-size:0.8rem; font-weight:600;">Sparrow-2.1.0.exe</div>
+                                                    <div style="color:#aaa; font-size:0.72rem;">Download complete</div>
+                                                </div>
+                                            </div>
+                                            <button class="mock-btn" style="background:#1e88cf; color:white; font-size:0.78rem; white-space:nowrap;">Open file</button>
+                                        </div>
+                                    </div>
+                                </div>
+                                <div>
+                                    <div style="font-size:0.78rem; color:#888; margin-bottom:5px;">Or find it in File Explorer → Downloads:</div>
+                                    <div class="ui-mockup" style="max-width:280px;">
+                                        <div class="mock-titlebar-win">
+                                            <span>📁 Downloads</span>
+                                            <span style="font-size:0.72rem; opacity:0.8;">─ □ ✕</span>
+                                        </div>
+                                        <div class="mock-body" style="padding:10px 12px; display:flex; flex-direction:column; gap:4px;">
+                                            <div style="display:flex; align-items:center; gap:8px; padding:5px 8px; border-radius:3px; opacity:0.4; font-size:0.82rem;">📄 example-file.pdf</div>
+                                            <div style="display:flex; align-items:center; gap:8px; padding:5px 8px; border-radius:3px; background:#cce4ff; font-size:0.82rem; font-weight:600; border:1px solid #7ab3e0;">
+                                                <img src="/static/sparrow-logo.png" alt="" style="width:18px; height:18px;"> Sparrow-2.1.0.exe
+                                            </div>
+                                            <div style="display:flex; align-items:center; gap:8px; padding:5px 8px; border-radius:3px; opacity:0.4; font-size:0.82rem;">📄 document.docx</div>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="ui-step">
+                        <div class="ui-step-label">3</div>
+                        <div class="ui-step-content">
+                            <p><strong>Run the installer.</strong><br>
+                            Double-click the <code>.exe</code> file. A setup wizard opens. Click <strong>Next</strong> on each screen — all default settings are fine. Click <strong>Install</strong> on the final screen and wait for it to finish, then click <strong>Finish</strong>.</p>
+                            <div class="ui-mockup" style="max-width:340px;">
+                                <div class="mock-titlebar-win" style="background:#131415;">
+                                    <div style="display:flex; align-items:center; gap:6px;">
+                                        <img src="/static/sparrow-logo.png" alt="" style="width:16px; height:16px;">
+                                        <span>Sparrow Wallet Setup</span>
+                                    </div>
+                                    <span style="font-size:0.72rem; opacity:0.8;">─ □ ✕</span>
+                                </div>
+                                <div class="mock-body" style="text-align:center; padding:22px 20px 16px;">
+                                    <img src="/static/sparrow-logo.png" alt="Sparrow" style="width:52px; height:52px; margin-bottom:10px;">
+                                    <div style="font-size:0.95rem; font-weight:600; margin-bottom:6px;">Welcome to Sparrow Wallet Setup</div>
+                                    <p style="color:#555; font-size:0.82rem; margin:0 0 20px;">This will install Sparrow Wallet on your computer.<br>Click <strong>Next</strong> to continue.</p>
+                                    <div style="display:flex; justify-content:flex-end; gap:8px;">
+                                        <button class="mock-btn mock-btn-grey">Cancel</button>
+                                        <button class="mock-btn" style="background:#1e88cf; color:white;">Next →</button>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="ui-step">
+                        <div class="ui-step-label">4</div>
+                        <div class="ui-step-content">
+                            <p><strong>Windows SmartScreen warning — do not panic!</strong><br>
+                            Windows may show a blue warning saying it does not recognise Sparrow. This is completely normal for open-source apps that are not from big companies. You need to click <strong>More info</strong> first — this reveals a second button. Then click <strong>Run anyway</strong>.</p>
+                            <div style="display:flex; gap:10px; flex-wrap:wrap; margin:10px 0; align-items:center;">
+                                <div>
+                                    <div style="font-size:0.75rem; color:#888; margin-bottom:5px;">① Click "More info":</div>
+                                    <div class="ui-mockup" style="max-width:260px;">
+                                        <div class="mock-titlebar-win" style="background:#1a4480;">
+                                            <span style="font-size:0.8rem;">Windows protected your PC</span>
+                                            <span style="font-size:0.72rem; opacity:0.8;">✕</span>
+                                        </div>
+                                        <div class="mock-body" style="background:#e8f0fb; padding:16px;">
+                                            <div style="font-size:0.85rem; font-weight:600; color:#1a4480; margin-bottom:8px;">⛨ Windows Defender SmartScreen</div>
+                                            <p style="font-size:0.8rem; color:#333; margin:0 0 8px;">Windows protected your PC. The app is not recognised.</p>
+                                            <div style="color:#1565C0; font-size:0.82rem; font-weight:600; cursor:default; margin-bottom:14px;">▶ More info  ← click this</div>
+                                            <div style="display:flex; justify-content:flex-end;">
+                                                <button class="mock-btn mock-btn-grey">Don't run</button>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                                <div style="font-size:1.6rem; color:#bbb; flex:none; align-self:center; margin-top:18px;">→</div>
+                                <div>
+                                    <div style="font-size:0.75rem; color:#888; margin-bottom:5px;">② Click "Run anyway":</div>
+                                    <div class="ui-mockup" style="max-width:260px;">
+                                        <div class="mock-titlebar-win" style="background:#1a4480;">
+                                            <span style="font-size:0.8rem;">Windows protected your PC</span>
+                                            <span style="font-size:0.72rem; opacity:0.8;">✕</span>
+                                        </div>
+                                        <div class="mock-body" style="background:#e8f0fb; padding:16px;">
+                                            <div style="font-size:0.85rem; font-weight:600; color:#1a4480; margin-bottom:6px;">⛨ Windows Defender SmartScreen</div>
+                                            <div style="font-size:0.8rem; color:#333; margin-bottom:2px;"><strong>App:</strong> Sparrow-2.1.0.exe</div>
+                                            <div style="font-size:0.8rem; color:#333; margin-bottom:16px;"><strong>Publisher:</strong> Unknown publisher</div>
+                                            <div style="display:flex; justify-content:flex-end; gap:8px;">
+                                                <button class="mock-btn mock-btn-grey">Don't run</button>
+                                                <button class="mock-btn" style="background:#1e88cf; color:white; font-weight:600;">Run anyway</button>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="ui-step">
+                        <div class="ui-step-label">5</div>
+                        <div class="ui-step-content">
+                            <p><strong>Open Sparrow from the Start menu — you are done!</strong><br>
+                            Click the Windows Start button (bottom-left), type <strong>Sparrow</strong> and click it. Sparrow opens with its dark window and logo. You will see the wallet setup screen — that means everything worked perfectly.</p>
+                            <div style="display:flex; gap:12px; flex-wrap:wrap; align-items:flex-start; margin:10px 0;">
+                                <div class="ui-mockup" style="max-width:220px;">
+                                    <div class="mock-titlebar-win">
+                                        <span>⊞  Search</span>
+                                    </div>
+                                    <div class="mock-body" style="background:#1a1a2e; padding:10px 12px;">
+                                        <div style="background:rgba(255,255,255,0.08); border-radius:4px; padding:5px 8px; font-size:0.78rem; color:#aaa; margin-bottom:8px;">🔍 sparrow</div>
+                                        <div style="background:rgba(255,255,255,0.15); border-radius:6px; padding:8px 10px; display:flex; align-items:center; gap:8px;">
+                                            <img src="/static/sparrow-logo.png" alt="" style="width:22px; height:22px;">
+                                            <div>
+                                                <div style="color:white; font-size:0.82rem; font-weight:600;">Sparrow Wallet</div>
+                                                <div style="color:rgba(255,255,255,0.45); font-size:0.7rem;">App</div>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                                <div style="font-size:1.6rem; color:#bbb; flex:none; align-self:center;">→</div>
+                                <div class="ui-mockup" style="max-width:280px;">
+                                    <div style="background:#131415; padding:5px 10px; display:flex; align-items:center; justify-content:space-between;">
+                                        <div style="display:flex; align-items:center; gap:6px;">
+                                            <img src="/static/sparrow-logo.png" alt="" style="width:16px; height:16px;">
+                                            <span style="color:#ccc; font-size:0.8rem;">Sparrow Wallet</span>
+                                        </div>
+                                        <div><span class="ui-win-btn">─</span><span class="ui-win-btn">□</span><span class="ui-win-btn" style="background:#c42b1c;color:white;border-color:#c42b1c;">✕</span></div>
+                                    </div>
+                                    <div style="background:#1b1d1f; padding:0; border-bottom:1px solid #333;">
+                                        <div style="display:flex; gap:0; font-size:0.78rem;">
+                                            <span style="padding:5px 10px; color:#ccc; cursor:default;">File</span>
+                                            <span style="padding:5px 10px; color:#ccc; cursor:default;">View</span>
+                                            <span style="padding:5px 10px; color:#ccc; cursor:default;">Tool</span>
+                                            <span style="padding:5px 10px; color:#ccc; cursor:default;">Help</span>
+                                        </div>
+                                    </div>
+                                    <div style="background:#1b1d1f; padding:20px 16px; text-align:center;">
+                                        <img src="/static/sparrow-logo.png" alt="Sparrow" style="width:42px; height:42px; margin-bottom:8px;">
+                                        <div style="color:white; font-weight:600; font-size:0.9rem; margin-bottom:4px;">Welcome to Sparrow</div>
+                                        <div style="color:#888; font-size:0.72rem; margin-bottom:14px;">A Bitcoin Wallet for those who value financial self sovereignty</div>
+                                        <button class="mock-btn" style="background:#1e88cf; color:white; width:100%; padding:6px 0; font-size:0.82rem; margin-bottom:6px;">Create New Wallet</button>
+                                        <button class="mock-btn mock-btn-grey" style="width:100%; padding:6px 0; font-size:0.82rem;">Import Wallet</button>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
                 </div>
-                <p style="color:#777; font-size:0.88rem;">After installing, launch Sparrow from your applications menu or by running <code>sparrow</code> in a terminal.</p>
             </div>
 
-            <p style="margin-top:16px;">For a full walkthrough with screenshots, the Plan B Academy tutorial covers the installation in detail. <strong>Stop when you reach "Server Configuration" or "Connect to a node" — then come back here and continue from Step 2.</strong></p>
-            <div style="margin:12px 0 4px;">
+            <!-- ===== MACOS ===== -->
+            <div data-os="macos" style="margin-top:12px;">
+                <div class="ui-guide">
+
+                    <div class="ui-step">
+                        <div class="ui-step-label">1</div>
+                        <div class="ui-step-content">
+                            <p><strong>Open your browser and go to the Sparrow download page.</strong><br>
+                            Type <strong>sparrowwallet.com/download</strong> in the address bar and press Enter. Find the macOS section and click the <code>.dmg</code> file for your chip (Apple M-series or Intel).</p>
+                            <img class="zoomable" src="/static/sparrow-download-page.png" alt="Sparrow download page" style="width:100%; max-width:520px; border-radius:8px; border:1px solid #ddd; display:block; margin:10px 0;">
+                        </div>
+                    </div>
+
+                    <div class="ui-step">
+                        <div class="ui-step-label">2</div>
+                        <div class="ui-step-content">
+                            <p><strong>Find the downloaded file and open it.</strong><br>
+                            Safari shows a downloads icon (↓) at the top right of the browser. Click it, then click the file name to open it — OR open <strong>Finder</strong>, click <strong>Downloads</strong> in the left sidebar, and double-click the <code>.dmg</code> file.</p>
+                            <div style="display:flex; gap:12px; flex-wrap:wrap; margin:10px 0; align-items:flex-start;">
+                                <div>
+                                    <div style="font-size:0.78rem; color:#888; margin-bottom:5px;">Safari downloads list:</div>
+                                    <div class="ui-mockup" style="max-width:240px;">
+                                        <div class="mock-titlebar-mac">
+                                            <span class="mock-dot" style="background:#ff5f57;"></span>
+                                            <span class="mock-dot" style="background:#febc2e;"></span>
+                                            <span class="mock-dot" style="background:#28c840;"></span>
+                                            <span style="flex:1; text-align:right; font-size:0.75rem;">Downloads</span>
+                                        </div>
+                                        <div class="mock-body" style="padding:10px 12px;">
+                                            <div style="display:flex; align-items:center; gap:8px; padding:6px 8px; border-radius:6px; background:#f0f0f0;">
+                                                <img src="/static/sparrow-logo.png" alt="" style="width:28px; height:28px;">
+                                                <div>
+                                                    <div style="font-size:0.82rem; font-weight:600;">Sparrow-2.1.0.dmg</div>
+                                                    <div style="font-size:0.72rem; color:#888;">Done — 120 MB</div>
+                                                </div>
+                                                <span style="color:#007AFF; font-size:0.75rem; margin-left:auto; cursor:default;">🔍</span>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                                <div>
+                                    <div style="font-size:0.78rem; color:#888; margin-bottom:5px;">Or Finder → Downloads:</div>
+                                    <div class="ui-mockup" style="max-width:250px;">
+                                        <div class="mock-titlebar-mac">
+                                            <span class="mock-dot" style="background:#ff5f57;"></span>
+                                            <span class="mock-dot" style="background:#febc2e;"></span>
+                                            <span class="mock-dot" style="background:#28c840;"></span>
+                                            <span style="flex:1; text-align:center; font-size:0.78rem;">Downloads</span>
+                                        </div>
+                                        <div class="mock-body" style="display:flex; padding:10px 12px; gap:6px; flex-wrap:wrap;">
+                                            <div style="text-align:center; opacity:0.35; width:56px;"><div style="font-size:2rem;">📄</div><div style="font-size:0.66rem;">file.pdf</div></div>
+                                            <div style="text-align:center; outline:2px solid #007AFF; border-radius:6px; padding:3px; width:56px;">
+                                                <img src="/static/sparrow-logo.png" alt="" style="width:32px; height:32px; display:block; margin:0 auto;">
+                                                <div style="font-size:0.66rem; margin-top:2px;">Sparrow-2.1.0.dmg</div>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="ui-step">
+                        <div class="ui-step-label">3</div>
+                        <div class="ui-step-content">
+                            <p><strong>Drag Sparrow into Applications.</strong><br>
+                            When you open the .dmg a window appears with the Sparrow icon and a shortcut to your Applications folder. <strong>Click and hold</strong> the Sparrow icon, <strong>drag it</strong> across the arrow, and <strong>drop it</strong> on the Applications folder. Then close and eject the .dmg window.</p>
+                            <div class="ui-mockup" style="max-width:360px;">
+                                <div class="mock-titlebar-mac">
+                                    <span class="mock-dot" style="background:#ff5f57;"></span>
+                                    <span class="mock-dot" style="background:#febc2e;"></span>
+                                    <span class="mock-dot" style="background:#28c840;"></span>
+                                    <span style="flex:1; text-align:center; font-size:0.78rem;">Sparrow 2.1.0</span>
+                                </div>
+                                <div class="mock-body" style="display:flex; align-items:center; justify-content:space-around; padding:28px 20px;">
+                                    <div style="text-align:center;">
+                                        <img src="/static/sparrow-logo.png" alt="Sparrow" style="width:52px; height:52px;">
+                                        <div style="font-size:0.78rem; color:#444; margin-top:6px;">Sparrow</div>
+                                    </div>
+                                    <div style="font-size:2.2rem; color:#bbb;">→</div>
+                                    <div style="text-align:center;">
+                                        <div style="font-size:3.2rem;">📁</div>
+                                        <div style="font-size:0.78rem; color:#444; margin-top:2px;">Applications</div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="ui-step">
+                        <div class="ui-step-label">4</div>
+                        <div class="ui-step-content">
+                            <p><strong>Gatekeeper warning — do not panic!</strong><br>
+                            The first time you open Sparrow, macOS will block it saying "unidentified developer." <strong>Do not try to double-click it normally.</strong> Instead: open <strong>Finder → Applications</strong>, find Sparrow, then <strong>right-click</strong> (or hold Ctrl and click) the icon and choose <strong>Open</strong>. A different dialog appears with an Open button — click it once to allow Sparrow forever.</p>
+                            <div style="display:flex; gap:10px; flex-wrap:wrap; margin:10px 0; align-items:flex-start;">
+                                <div>
+                                    <div style="font-size:0.75rem; color:#888; margin-bottom:5px;">① Double-click → blocked:</div>
+                                    <div class="ui-mockup" style="max-width:240px;">
+                                        <div class="mock-titlebar-mac">
+                                            <span class="mock-dot" style="background:#ff5f57;"></span>
+                                            <span class="mock-dot" style="background:#febc2e;"></span>
+                                            <span class="mock-dot" style="background:#28c840;"></span>
+                                        </div>
+                                        <div class="mock-body" style="text-align:center; padding:18px 14px;">
+                                            <img src="/static/sparrow-logo.png" alt="" style="width:40px; height:40px; margin-bottom:8px;">
+                                            <div style="font-size:0.85rem; font-weight:600; margin-bottom:6px;">"Sparrow" can't be opened</div>
+                                            <p style="font-size:0.78rem; color:#555; margin:0 0 14px;">Apple cannot verify it is free from malware.</p>
+                                            <button class="mock-btn mock-btn-mac" style="width:100%; padding:6px 0; font-size:0.82rem;">OK</button>
+                                        </div>
+                                    </div>
+                                </div>
+                                <div style="align-self:center; font-size:1.4rem; color:#bbb; text-align:center; line-height:1.5; flex:none; margin-top:20px;">→<br><span style="font-size:0.7rem; color:#888;">right-click<br>→ Open</span></div>
+                                <div>
+                                    <div style="font-size:0.75rem; color:#888; margin-bottom:5px;">② Right-click → Open → click Open:</div>
+                                    <div class="ui-mockup" style="max-width:240px;">
+                                        <div class="mock-titlebar-mac">
+                                            <span class="mock-dot" style="background:#ff5f57;"></span>
+                                            <span class="mock-dot" style="background:#febc2e;"></span>
+                                            <span class="mock-dot" style="background:#28c840;"></span>
+                                        </div>
+                                        <div class="mock-body" style="text-align:center; padding:18px 14px;">
+                                            <img src="/static/sparrow-logo.png" alt="" style="width:40px; height:40px; margin-bottom:8px;">
+                                            <div style="font-size:0.85rem; font-weight:600; margin-bottom:6px;">"Sparrow" is from an unidentified developer</div>
+                                            <p style="font-size:0.78rem; color:#555; margin:0 0 14px;">Are you sure you want to open it?</p>
+                                            <div style="display:flex; gap:8px;">
+                                                <button class="mock-btn mock-btn-grey" style="flex:1; padding:6px 0; font-size:0.78rem;">Cancel</button>
+                                                <button class="mock-btn mock-btn-mac" style="flex:1; padding:6px 0; font-size:0.78rem; font-weight:600;">Open</button>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="ui-step">
+                        <div class="ui-step-label">5</div>
+                        <div class="ui-step-content">
+                            <p><strong>Sparrow opens — you are done!</strong><br>
+                            Sparrow launches with its dark window. You will see the menu bar at the top and the wallet setup screen. That means it is installed correctly.</p>
+                            <div class="ui-mockup" style="max-width:300px;">
+                                <div class="mock-titlebar-mac" style="background:#131415; border-bottom:1px solid #2a2a2a;">
+                                    <span class="mock-dot" style="background:#ff5f57;"></span>
+                                    <span class="mock-dot" style="background:#febc2e;"></span>
+                                    <span class="mock-dot" style="background:#28c840;"></span>
+                                    <span style="flex:1; text-align:center; color:#888; font-size:0.78rem;">Sparrow Wallet</span>
+                                </div>
+                                <div style="background:#1b1d1f; padding:0; border-bottom:1px solid #2a2a2a;">
+                                    <div style="display:flex; font-size:0.78rem; padding:2px 4px;">
+                                        <span style="padding:4px 8px; color:#ccc;">File</span>
+                                        <span style="padding:4px 8px; color:#ccc;">View</span>
+                                        <span style="padding:4px 8px; color:#ccc;">Tool</span>
+                                        <span style="padding:4px 8px; color:#ccc;">Help</span>
+                                    </div>
+                                </div>
+                                <div style="background:#1b1d1f; padding:20px 16px; text-align:center;">
+                                    <img src="/static/sparrow-logo.png" alt="Sparrow" style="width:44px; height:44px; margin-bottom:8px;">
+                                    <div style="color:white; font-weight:600; font-size:0.9rem; margin-bottom:4px;">Welcome to Sparrow</div>
+                                    <div style="color:#888; font-size:0.72rem; margin-bottom:14px;">A Bitcoin Wallet for those who value financial self sovereignty</div>
+                                    <button class="mock-btn" style="background:#1e88cf; color:white; width:100%; padding:6px 0; font-size:0.82rem; margin-bottom:6px;">Create New Wallet</button>
+                                    <button class="mock-btn mock-btn-grey" style="width:100%; padding:6px 0; font-size:0.82rem;">Import Wallet</button>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                </div>
+            </div>
+
+            <!-- ===== LINUX ===== -->
+            <div data-os="linux" style="margin-top:12px;">
+                <div class="ui-guide">
+
+                    <div class="ui-step">
+                        <div class="ui-step-label">1</div>
+                        <div class="ui-step-content">
+                            <p><strong>Open your browser and go to the Sparrow download page.</strong><br>
+                            Type <strong>sparrowwallet.com/download</strong> in your browser address bar and press Enter. For Ubuntu/Debian, click the <strong>Linux (Intel/AMD) (Ubuntu/Debian)</strong> link to download the <code>.deb</code> package.</p>
+                            <img class="zoomable" src="/static/sparrow-download-page.png" alt="Sparrow download page" style="width:100%; max-width:520px; border-radius:8px; border:1px solid #ddd; display:block; margin:10px 0;">
+                        </div>
+                    </div>
+
+                    <div class="ui-step">
+                        <div class="ui-step-label">2</div>
+                        <div class="ui-step-content">
+                            <p><strong>Open a Terminal.</strong><br>
+                            A Terminal is a text window where you type commands. You need it to install the file. Here are three ways to open one — use whichever works on your system:</p>
+                            <div style="display:flex; gap:10px; flex-wrap:wrap; margin:10px 0;">
+                                <div style="background:#f0f7ff; border:1px solid #c5ddf4; border-radius:8px; padding:12px 14px; flex:1; min-width:140px; font-size:0.85rem;">
+                                    <div style="font-weight:600; margin-bottom:4px;">⌨ Keyboard shortcut</div>
+                                    <div>Press <code>Ctrl + Alt + T</code> at the same time. Works on most Linux desktops (Ubuntu, Mint, etc.).</div>
+                                </div>
+                                <div style="background:#f0f7ff; border:1px solid #c5ddf4; border-radius:8px; padding:12px 14px; flex:1; min-width:140px; font-size:0.85rem;">
+                                    <div style="font-weight:600; margin-bottom:4px;">🔍 App search</div>
+                                    <div>Press the Super key (Windows key) or open your app menu, type <strong>Terminal</strong> and click it.</div>
+                                </div>
+                                <div style="background:#f0f7ff; border:1px solid #c5ddf4; border-radius:8px; padding:12px 14px; flex:1; min-width:140px; font-size:0.85rem;">
+                                    <div style="font-weight:600; margin-bottom:4px;">🖱 Right-click desktop</div>
+                                    <div>Right-click on an empty area of your desktop. If you see <strong>Open Terminal Here</strong>, click it.</div>
+                                </div>
+                            </div>
+                            <div class="ui-mockup" style="max-width:380px; margin-top:4px;">
+                                <div class="mock-titlebar-linux">
+                                    <span class="mock-dot" style="background:#ff5f57;"></span>
+                                    <span class="mock-dot" style="background:#febc2e;"></span>
+                                    <span class="mock-dot" style="background:#28c840;"></span>
+                                    <span style="margin-left:8px;">Terminal</span>
+                                </div>
+                                <div class="mock-terminal">
+                                    <div><span style="color:#28c840;">user@pc</span><span style="color:#aaa;">:~$</span> <span style="animation:blink 1s step-end infinite;">█</span></div>
+                                    <div style="color:#666; font-size:0.75rem; margin-top:4px;">← a blinking cursor means the terminal is ready</div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="ui-step">
+                        <div class="ui-step-label">3</div>
+                        <div class="ui-step-content">
+                            <p><strong>Go to your Downloads folder.</strong><br>
+                            In the terminal, type the command below and press Enter. This moves you into the Downloads folder where the Sparrow file was saved. The <code>ls</code> command lists the files so you can confirm the Sparrow file is there.</p>
+                            <div class="ui-mockup" style="max-width:440px;">
+                                <div class="mock-titlebar-linux">
+                                    <span class="mock-dot" style="background:#ff5f57;"></span>
+                                    <span class="mock-dot" style="background:#febc2e;"></span>
+                                    <span class="mock-dot" style="background:#28c840;"></span>
+                                    <span style="margin-left:8px;">Terminal</span>
+                                </div>
+                                <div class="mock-terminal">
+                                    <div><span style="color:#28c840;">user@pc</span><span style="color:#aaa;">:~$</span> cd ~/Downloads</div>
+                                    <div style="color:#666; font-size:0.75rem; padding-left:8px; margin:1px 0;">← this moves you into the Downloads folder</div>
+                                    <div style="margin-top:4px;"><span style="color:#28c840;">user@pc</span><span style="color:#aaa;">:~/Downloads$</span> ls</div>
+                                    <div style="color:#d4d4d4; margin-top:2px; padding-left:8px;">sparrow-2.1.0-1.x86_64.deb</div>
+                                    <div style="color:#666; font-size:0.75rem; padding-left:8px; margin:1px 0;">← you can see the Sparrow file is here</div>
+                                    <div style="margin-top:4px;"><span style="color:#28c840;">user@pc</span><span style="color:#aaa;">:~/Downloads$</span> <span>█</span></div>
+                                </div>
+                            </div>
+                            <div style="background:#f8f9fa; padding:8px 10px; border-radius:5px; margin-top:8px; position:relative;">
+                                <pre id="linux-cd-downloads" style="margin:0; font-size:0.85rem;">cd ~/Downloads</pre>
+                                <button onclick="copyToClipboard('linux-cd-downloads')" style="position:absolute; top:6px; right:8px; background:#f7931a; color:white; border:none; padding:4px 8px; border-radius:3px; cursor:pointer; font-size:0.8rem;">Copy</button>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="ui-step">
+                        <div class="ui-step-label">4</div>
+                        <div class="ui-step-content">
+                            <p><strong>Install Sparrow.</strong><br>
+                            Run the command below. It installs the <code>.deb</code> package. It will ask for your <strong>password</strong> — type it and press Enter. Nothing shows on screen while you type — that is normal, it is just a security feature.</p>
+                            <div class="ui-mockup" style="max-width:460px;">
+                                <div class="mock-titlebar-linux">
+                                    <span class="mock-dot" style="background:#ff5f57;"></span>
+                                    <span class="mock-dot" style="background:#febc2e;"></span>
+                                    <span class="mock-dot" style="background:#28c840;"></span>
+                                    <span style="margin-left:8px;">Terminal — ~/Downloads</span>
+                                </div>
+                                <div class="mock-terminal">
+                                    <div><span style="color:#28c840;">user@pc</span><span style="color:#aaa;">:~/Downloads$</span> sudo dpkg -i sparrow-*.deb</div>
+                                    <div style="color:#666; font-size:0.75rem; padding-left:8px; margin:2px 0;">[sudo] password for user: <span style="color:#aaa;">········</span>  ← type your password here, then press Enter</div>
+                                    <div style="color:#d4d4d4; margin-top:4px;">Selecting previously unselected package sparrow.</div>
+                                    <div style="color:#d4d4d4;">Unpacking sparrow (2.1.0) ...</div>
+                                    <div style="color:#d4d4d4;">Setting up sparrow (2.1.0) ...</div>
+                                    <div style="color:#28c840; margin-top:2px;">Done.</div>
+                                    <div style="margin-top:4px;"><span style="color:#28c840;">user@pc</span><span style="color:#aaa;">:~/Downloads$</span> <span>█</span></div>
+                                </div>
+                            </div>
+                            <div style="background:#f8f9fa; padding:8px 10px; border-radius:5px; margin-top:8px; position:relative;">
+                                <pre id="sparrow-deb" style="margin:0; font-size:0.85rem;">sudo dpkg -i sparrow-*.deb</pre>
+                                <button onclick="copyToClipboard('sparrow-deb')" style="position:absolute; top:6px; right:8px; background:#f7931a; color:white; border:none; padding:4px 8px; border-radius:3px; cursor:pointer; font-size:0.8rem;">Copy</button>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="ui-step">
+                        <div class="ui-step-label">5</div>
+                        <div class="ui-step-content">
+                            <p><strong>Launch Sparrow — you are done!</strong><br>
+                            Open your applications menu, search for <strong>Sparrow Wallet</strong> and click it. You will see Sparrow's dark window with the wallet setup screen — that means it is installed correctly.</p>
+                            <div style="display:flex; gap:12px; flex-wrap:wrap; align-items:flex-start; margin:10px 0;">
+                                <div>
+                                    <div style="font-size:0.78rem; color:#888; margin-bottom:5px;">App launcher — search "Sparrow":</div>
+                                    <img class="zoomable" src="/static/sparrow-app-launcher.png" alt="App launcher showing Sparrow" style="width:100%; max-width:340px; border-radius:8px; border:1px solid #ddd; display:block;">
+                                </div>
+                                <div style="font-size:1.6rem; color:#bbb; align-self:center; flex:none;">→</div>
+                                <div>
+                                    <div style="font-size:0.78rem; color:#888; margin-bottom:5px;">Sparrow opens — installation complete:</div>
+                                    <img class="zoomable" src="/static/sparrow-welcome.png" alt="Sparrow welcome screen" style="width:100%; max-width:340px; border-radius:8px; border:1px solid #ddd; display:block;">
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                </div>
+            </div>
+
+            <p style="margin-top:20px; color:#777; font-size:0.9rem;">Want a video walkthrough? The Plan B Academy tutorial shows the full installation with real screenshots. <strong>Stop when you reach "Server Configuration" — then come back here for Step 2.</strong></p>
+            <div style="margin:10px 0 4px;">
                 <a href="https://planb.academy/en/tutorials/wallet/desktop/sparrow-c674e2ac-d46f-4c82-92a7-7d1b0e262f5d" target="_blank"
                    style="display:inline-flex; align-items:center; gap:10px; background: linear-gradient(135deg, #f7931a, #ff9800); color:white; padding:14px 24px; border-radius:10px; font-weight:bold; font-size:1rem; text-decoration:none;">
                     &#127891; Open the Sparrow Wallet Tutorial on Plan B Academy
@@ -930,7 +1440,7 @@ HTML_TEMPLATE = """
                     <div class="ui-step-label">A</div>
                     <div class="ui-step-content">
                         <p>Click <strong>Tools</strong> in the top menu, hover over <strong>Restart in</strong>, then click <strong>Signet</strong>.</p>
-                        <img src="/static/sparrow-restart-signet.png" alt="Sparrow Tools menu showing Restart in Signet" style="max-width:480px; border-radius:8px; box-shadow:0 4px 14px rgba(0,0,0,0.18); border:1px solid #ccc;">
+                        <img class="zoomable" src="/static/sparrow-restart-signet.png" alt="Sparrow Tools menu showing Restart in Signet" style="max-width:480px; border-radius:8px; box-shadow:0 4px 14px rgba(0,0,0,0.18); border:1px solid #ccc;">
                     </div>
                 </div>
             </div>
@@ -945,7 +1455,7 @@ HTML_TEMPLATE = """
                     <div class="ui-step-label">A</div>
                     <div class="ui-step-content">
                         <p>Click <strong>File</strong> in the top menu bar, then click <strong>Settings...</strong> near the bottom of the list.</p>
-                        <img src="/static/sparrow-file-menu.png" alt="Sparrow File menu showing Settings option" style="max-width:300px; border-radius:8px; box-shadow:0 4px 14px rgba(0,0,0,0.18); border:1px solid #ccc;">
+                        <img class="zoomable" src="/static/sparrow-file-menu.png" alt="Sparrow File menu showing Settings option" style="max-width:300px; border-radius:8px; box-shadow:0 4px 14px rgba(0,0,0,0.18); border:1px solid #ccc;">
                     </div>
                 </div>
                 <div class="ui-step">
@@ -953,7 +1463,7 @@ HTML_TEMPLATE = """
                     <div class="ui-step-content">
                         <p>A settings window opens. Click <strong>Server</strong> in the left sidebar. Then under <strong>Type</strong>, click <strong>Bitcoin Core</strong>.</p>
                         <p style="color:#777; font-size:0.9rem;">You will see three options: Public Server, Bitcoin Core, and Private Electrum. <strong>Bitcoin Core is the best available option for this task.</strong></p>
-                        <img src="/static/sparrow-server-settings.png" alt="Sparrow Server settings with Bitcoin Core selected" style="max-width:480px; border-radius:8px; box-shadow:0 4px 14px rgba(0,0,0,0.18); border:1px solid #ccc;">
+                        <img class="zoomable" src="/static/sparrow-server-settings.png" alt="Sparrow Server settings with Bitcoin Core selected" style="max-width:480px; border-radius:8px; box-shadow:0 4px 14px rgba(0,0,0,0.18); border:1px solid #ccc;">
                     </div>
                 </div>
                 <div class="ui-step">
@@ -1086,72 +1596,334 @@ HTML_TEMPLATE = """
             <p style="margin-top:20px;"><strong>Step 1 — Choose a Bitcoin node to install</strong></p>
             <p>There are several Bitcoin node implementations to choose from. They all follow the same rules and work on the same network — they just differ in features and philosophy. Pick one:</p>
 
-            <div style="display:flex; flex-direction:column; gap:10px; margin:14px 0;">
-                <div style="background:#f8f9fa; border:1px solid #e0e0e0; border-radius:10px; padding:14px 18px;">
-                    <div style="display:flex; align-items:center; gap:10px; flex-wrap:wrap;">
-                        <strong>Bitcoin Core</strong>
-                        <a href="https://bitcoincore.org/en/download/" target="_blank" style="font-size:0.82rem; background:#f7931a; color:white; padding:3px 10px; border-radius:12px; text-decoration:none;">Download</a>
-                        <button class="hint-btn" style="color:#f7931a; border-color:#f7931a;" onclick="toggleInfo('info-core')">i</button>
+            <p style="margin:10px 0 6px; font-weight:600;">Click the one you want to install — the guide will update automatically:</p>
+            <div style="display:flex; gap:12px; flex-wrap:wrap; margin:10px 0 6px;">
+                <div id="card-core" onclick="selectNode('core')" style="flex:1; min-width:200px; background:#f8f9fa; border:2px solid #f7931a; border-radius:12px; padding:16px 18px; cursor:pointer; transition:all 0.15s;">
+                    <div style="display:flex; align-items:center; gap:10px; margin-bottom:8px;">
+                        <img src="/static/bitcoin-core-logo.png" alt="Bitcoin Core" style="width:36px; height:36px; border-radius:6px;">
+                        <strong style="font-size:1rem;">Bitcoin Core</strong>
+                        <span id="check-core" style="margin-left:auto; color:#f7931a; font-size:1.2rem;">✓</span>
                     </div>
-                    <div id="info-core" class="hint-box">The original Bitcoin software, maintained since 2009. It is the most widely used implementation and the reference for the Bitcoin protocol. A solid default choice — well-tested and supported by a large developer community.</div>
+                    <p style="margin:0; font-size:0.85rem; color:#555;">A widely used Bitcoin node. Well tested and backed by a large developer community.</p>
+                    <button class="hint-btn" style="color:#f7931a; border-color:#f7931a; margin-top:8px;" onclick="event.stopPropagation(); toggleInfo('info-core')">i</button>
+                    <div id="info-core" class="hint-box">A Bitcoin node implementation maintained since 2009. Widely used and well tested, supported by a large developer community. A reliable choice for running your own node.</div>
                 </div>
-                <div style="background:#f8f9fa; border:1px solid #e0e0e0; border-radius:10px; padding:14px 18px;">
-                    <div style="display:flex; align-items:center; gap:10px; flex-wrap:wrap;">
-                        <strong>Bitcoin Knots</strong>
-                        <a href="https://bitcoinknots.org/" target="_blank" style="font-size:0.82rem; background:#f7931a; color:white; padding:3px 10px; border-radius:12px; text-decoration:none;">Download</a>
-                        <button class="hint-btn" style="color:#f7931a; border-color:#f7931a;" onclick="toggleInfo('info-knots')">i</button>
+                <div id="card-knots" onclick="selectNode('knots')" style="flex:1; min-width:200px; background:#f8f9fa; border:2px solid #e0e0e0; border-radius:12px; padding:16px 18px; cursor:pointer; transition:all 0.15s;">
+                    <div style="display:flex; align-items:center; gap:10px; margin-bottom:8px;">
+                        <img src="/static/bitcoin-knots-logo.png" alt="Bitcoin Knots" style="width:36px; height:36px; border-radius:6px;">
+                        <strong style="font-size:1rem;">Bitcoin Knots</strong>
+                        <span id="check-knots" style="margin-left:auto; color:#f7931a; font-size:1.2rem; display:none;">✓</span>
                     </div>
-                    <div id="info-knots" class="hint-box">A fork of Bitcoin Core with additional features and stricter defaults — for example it gives you more control over which transactions your node accepts and relays. Popular with users who want a bit more configurability. Compatible with everything Bitcoin Core supports.</div>
-                </div>
-                <div style="background:#f8f9fa; border:1px solid #e0e0e0; border-radius:10px; padding:14px 18px;">
-                    <div style="display:flex; align-items:center; gap:10px; flex-wrap:wrap;">
-                        <strong>btcd</strong>
-                        <a href="https://github.com/btcsuite/btcd" target="_blank" style="font-size:0.82rem; background:#f7931a; color:white; padding:3px 10px; border-radius:12px; text-decoration:none;">GitHub</a>
-                        <button class="hint-btn" style="color:#f7931a; border-color:#f7931a;" onclick="toggleInfo('info-btcd')">i</button>
-                    </div>
-                    <div id="info-btcd" class="hint-box">A full Bitcoin node written in the Go programming language, maintained by the btcsuite team. Popular in developer environments and cloud deployments. A good choice if you are coming from a Go or DevOps background.</div>
-                </div>
-                <div style="background:#f8f9fa; border:1px solid #e0e0e0; border-radius:10px; padding:14px 18px;">
-                    <div style="display:flex; align-items:center; gap:10px; flex-wrap:wrap;">
-                        <strong>Libbitcoin</strong>
-                        <a href="https://libbitcoin.info/" target="_blank" style="font-size:0.82rem; background:#f7931a; color:white; padding:3px 10px; border-radius:12px; text-decoration:none;">Website</a>
-                        <button class="hint-btn" style="color:#f7931a; border-color:#f7931a;" onclick="toggleInfo('info-libbitcoin')">i</button>
-                    </div>
-                    <div id="info-libbitcoin" class="hint-box">An independent C++ implementation of Bitcoin, built as a toolkit for developers. Less common for everyday node running but valuable as a fully independent codebase — having multiple independent implementations strengthens the network's resilience.</div>
+                    <p style="margin:0; font-size:0.85rem; color:#555;">A Bitcoin node with extra features and stricter defaults. More control over your node.</p>
+                    <button class="hint-btn" style="color:#f7931a; border-color:#f7931a; margin-top:8px;" onclick="event.stopPropagation(); toggleInfo('info-knots')">i</button>
+                    <div id="info-knots" class="hint-box">A Bitcoin node with additional features and stricter defaults — gives you more control over which transactions your node accepts and relays. Compatible with everything Bitcoin Core supports.</div>
                 </div>
             </div>
-            <p style="color:#777; font-size:0.88rem; margin-top:4px;">Not sure which to pick? <strong>Bitcoin Core</strong> or <strong>Bitcoin Knots</strong> are the most beginner-friendly starting points. The steps below use commands that work for both.</p>
+            <div style="background:#f8f9fa; border:1px solid #e0e0e0; border-radius:10px; padding:12px 16px; margin-bottom:10px;">
+                <div style="display:flex; align-items:center; gap:10px; flex-wrap:wrap;">
+                    <strong>btcd</strong>
+                    <a href="https://github.com/btcsuite/btcd" target="_blank" style="font-size:0.82rem; background:#f7931a; color:white; padding:3px 10px; border-radius:12px; text-decoration:none;">GitHub</a>
+                    <button class="hint-btn" style="color:#f7931a; border-color:#f7931a;" onclick="toggleInfo('info-btcd')">i</button>
+                </div>
+                <div id="info-btcd" class="hint-box">A full Bitcoin node written in Go. Popular in developer environments. The steps below do not cover btcd — follow its own documentation.</div>
+            </div>
+            <div style="background:#f8f9fa; border:1px solid #e0e0e0; border-radius:10px; padding:12px 16px; margin-bottom:16px;">
+                <div style="display:flex; align-items:center; gap:10px; flex-wrap:wrap;">
+                    <strong>Libbitcoin</strong>
+                    <a href="https://libbitcoin.info/" target="_blank" style="font-size:0.82rem; background:#f7931a; color:white; padding:3px 10px; border-radius:12px; text-decoration:none;">Website</a>
+                    <button class="hint-btn" style="color:#f7931a; border-color:#f7931a;" onclick="toggleInfo('info-libbitcoin')">i</button>
+                </div>
+                <div id="info-libbitcoin" class="hint-box">An independent C++ implementation. Less common for everyday use. The steps below do not cover Libbitcoin — follow its own documentation.</div>
+            </div>
 
             <p style="margin-top:28px;"><strong>Step 2 — Download and install</strong></p>
-            <p>Go to the download page for the node you chose and follow the steps for your system:</p>
+            <p>The steps below match your selection above. You can change it any time by clicking the cards.</p>
 
-            <div data-os="windows" style="margin-top:8px;">
-                <ul>
-                    <li>Download the <code>.exe</code> installer file</li>
-                    <li>Run it and follow the on-screen steps — you can leave all default settings as they are</li>
-                    <li>Bitcoin Core and Knots also install a visual app (Bitcoin-Qt) — you can open it to watch sync progress if you prefer</li>
-                </ul>
-                <div class="os-warning">&#128272; <strong>Windows Defender warning:</strong> Windows may flag the installer. This is a standard warning for software not signed by a large company. Bitcoin Core and Knots are open-source — you can verify the download is genuine using the checksums listed on the download page.</div>
-            </div>
-            <div data-os="macos" style="margin-top:8px;">
-                <ul>
-                    <li>Download the <code>.dmg</code> file</li>
-                    <li>Open the .dmg, then drag the Bitcoin app into your Applications folder</li>
-                    <li>First time you open it, macOS may say "unidentified developer" — right-click the app icon and choose <strong>Open</strong> to bypass this once</li>
-                    <li>Bitcoin Core and Knots include a visual interface — you can open it from Applications to watch sync progress</li>
-                </ul>
-            </div>
-            <div data-os="linux" style="margin-top:8px;">
-                <ul>
-                    <li>Download the <code>.tar.gz</code> archive for your CPU (usually <code>x86_64-linux-gnu</code>)</li>
-                    <li>Extract it and copy the programs to <code>/usr/local/bin/</code> so you can run them from any terminal:</li>
-                </ul>
-                <div style="background:#f8f9fa; padding:10px; border-radius:5px; margin:8px 0; position:relative;">
-                    <pre id="linux-install" style="margin:0; font-size:0.85rem; white-space:pre-wrap;">tar -xzf bitcoin-*.tar.gz
-sudo install -m 0755 -o root -g root -t /usr/local/bin bitcoin-*/bin/*</pre>
-                    <button onclick="copyToClipboard('linux-install')" style="position:absolute; top:8px; right:8px; background:#f7931a; color:white; border:none; padding:4px 8px; border-radius:3px; cursor:pointer; font-size:0.8rem;">Copy</button>
+            <div data-os="windows" style="margin-top:12px;">
+                <div class="ui-guide">
+
+                    <div class="ui-step">
+                        <div class="ui-step-label">1</div>
+                        <div class="ui-step-content">
+                            <div data-node="core">
+                                <p><strong>Download the installer</strong> — go to <a href="https://bitcoincore.org/en/download/" target="_blank">bitcoincore.org/en/download ↗</a>. Click <strong>Windows</strong> to download the <code>.exe</code> installer.</p>
+                                <img class="zoomable" src="/static/bitcoin-core-download.png" alt="Bitcoin Core download page" style="width:100%; max-width:520px; border-radius:8px; border:1px solid #ddd; display:block; margin:10px 0;">
+                            </div>
+                            <div data-node="knots">
+                                <p><strong>Download the installer</strong> — go to <a href="https://bitcoinknots.org/" target="_blank">bitcoinknots.org ↗</a>. Click <strong>Show other download formats</strong> and select the Windows <code>.exe</code> installer.</p>
+                                <img class="zoomable" src="/static/bitcoin-knots-download.png" alt="Bitcoin Knots download page" style="width:100%; max-width:520px; border-radius:8px; border:1px solid #ddd; display:block; margin:10px 0;">
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="ui-step">
+                        <div class="ui-step-label">2</div>
+                        <div class="ui-step-content">
+                            <div data-node="core"><p><strong>Run the installer</strong> — double-click the downloaded file. A setup wizard opens. Click <strong>Next</strong> on each screen and leave all defaults, then click <strong>Install</strong>.</p></div>
+                            <div data-node="knots"><p><strong>Run the installer</strong> — double-click the downloaded file. The setup wizard looks identical to Bitcoin Core's. Click <strong>Next</strong> on each screen and leave all defaults, then click <strong>Install</strong>.</p></div>
+                            <div class="ui-mockup" style="max-width:340px;">
+                                <div class="mock-titlebar-win">
+                                    <span data-node="core">Bitcoin Core Setup</span>
+                                    <span data-node="knots">Bitcoin Knots Setup</span>
+                                    <span style="font-size:0.72rem; opacity:0.8;">─ □ ✕</span>
+                                </div>
+                                <div class="mock-body" style="text-align:center; padding:22px 20px 16px;">
+                                    <div style="font-size:2.2rem; margin-bottom:8px;">₿</div>
+                                    <div style="font-size:0.95rem; font-weight:600; margin-bottom:6px;">
+                                        <span data-node="core">Welcome to Bitcoin Core Setup</span>
+                                        <span data-node="knots">Welcome to Bitcoin Knots Setup</span>
+                                    </div>
+                                    <p style="color:#555; font-size:0.82rem; margin:0 0 20px;">
+                                        <span data-node="core">This will install Bitcoin Core on your computer.</span>
+                                        <span data-node="knots">This will install Bitcoin Knots on your computer.</span>
+                                    </p>
+                                    <div style="display:flex; justify-content:flex-end; gap:8px;">
+                                        <button class="mock-btn mock-btn-grey">Cancel</button>
+                                        <button class="mock-btn mock-btn-blue">Next →</button>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="ui-step">
+                        <div class="ui-step-label">3</div>
+                        <div class="ui-step-content">
+                            <p><strong>Windows SmartScreen warning</strong> — Windows may show a blue warning saying it does not recognise the app. This is normal for open-source software. Click <strong>More info</strong>, then <strong>Run anyway</strong> on the next screen.</p>
+                            <div style="display:flex; gap:10px; flex-wrap:wrap; margin:10px 0; align-items:center;">
+                                <div class="ui-mockup" style="max-width:270px; flex:1; min-width:190px;">
+                                    <div class="mock-titlebar-win" style="background:#1a4480;">
+                                        <span>Windows protected your PC</span>
+                                        <span style="font-size:0.72rem; opacity:0.8;">✕</span>
+                                    </div>
+                                    <div class="mock-body" style="background:#e8f0fb; padding:16px;">
+                                        <div style="font-size:0.85rem; font-weight:600; color:#1a4480; margin-bottom:6px;">⛨ Windows Defender SmartScreen</div>
+                                        <p style="font-size:0.8rem; color:#333; margin:0 0 6px;">Windows protected your PC. The app is unrecognised.</p>
+                                        <div style="color:#1565C0; font-size:0.8rem; margin:0 0 14px; cursor:default;">▶ More info</div>
+                                        <div style="display:flex; justify-content:flex-end;">
+                                            <button class="mock-btn mock-btn-grey">Don't run</button>
+                                        </div>
+                                    </div>
+                                </div>
+                                <div style="font-size:1.6rem; color:#bbb; flex:none; align-self:center;">→</div>
+                                <div class="ui-mockup" style="max-width:270px; flex:1; min-width:190px;">
+                                    <div class="mock-titlebar-win" style="background:#1a4480;">
+                                        <span>Windows protected your PC</span>
+                                        <span style="font-size:0.72rem; opacity:0.8;">✕</span>
+                                    </div>
+                                    <div class="mock-body" style="background:#e8f0fb; padding:16px;">
+                                        <div style="font-size:0.85rem; font-weight:600; color:#1a4480; margin-bottom:6px;">⛨ Windows Defender SmartScreen</div>
+                                        <div style="font-size:0.8rem; color:#333; margin-bottom:2px;"><strong>App:</strong> <span data-node="core">bitcoin-28.0-win64-setup.exe</span><span data-node="knots">bitcoin-28.0.knots-win64-setup.exe</span></div>
+                                        <div style="font-size:0.8rem; color:#333; margin-bottom:16px;"><strong>Publisher:</strong> Unknown publisher</div>
+                                        <div style="display:flex; justify-content:flex-end; gap:8px;">
+                                            <button class="mock-btn mock-btn-grey">Don't run</button>
+                                            <button class="mock-btn mock-btn-blue">Run anyway</button>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="ui-step">
+                        <div class="ui-step-label">4</div>
+                        <div class="ui-step-content">
+                            <p><strong>Installation complete.</strong> <span data-node="core">Bitcoin Core</span><span data-node="knots">Bitcoin Knots</span> is now on your computer. You will find it in the Start menu. You do not need to open it now — the next steps use the command line.</p>
+                            <div class="ui-mockup" style="max-width:240px;">
+                                <div class="mock-titlebar-win">
+                                    <span>⊞ Start</span>
+                                    <span style="font-size:0.72rem; opacity:0.8;">✕</span>
+                                </div>
+                                <div class="mock-body" style="background:#1a1a2e; padding:10px 12px;">
+                                    <div style="background:rgba(255,255,255,0.08); border-radius:6px; padding:8px 12px; display:flex; align-items:center; gap:10px;">
+                                        <span style="font-size:1.4rem;">₿</span>
+                                        <div>
+                                            <div style="color:white; font-size:0.85rem; font-weight:600;"><span data-node="core">Bitcoin Core</span><span data-node="knots">Bitcoin Knots</span></div>
+                                            <div style="color:rgba(255,255,255,0.45); font-size:0.72rem;">App · Recently added</div>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
                 </div>
-                <p style="color:#777; font-size:0.88rem;">Bitcoin Core and Knots also ship with <code>bitcoin-qt</code> (a visual interface) installed by the same command above.</p>
+            </div>
+
+            <div data-os="macos" style="margin-top:12px;">
+                <div class="ui-guide">
+
+                    <div class="ui-step">
+                        <div class="ui-step-label">1</div>
+                        <div class="ui-step-content">
+                            <div data-node="core">
+                                <p><strong>Download the disk image</strong> — go to <a href="https://bitcoincore.org/en/download/" target="_blank">bitcoincore.org/en/download ↗</a>. Click <strong>macOS (arm64)</strong> or <strong>macOS (x86_64)</strong> to download the <code>.dmg</code>.</p>
+                                <img class="zoomable" src="/static/bitcoin-core-download.png" alt="Bitcoin Core download page" style="width:100%; max-width:520px; border-radius:8px; border:1px solid #ddd; display:block; margin:10px 0;">
+                            </div>
+                            <div data-node="knots">
+                                <p><strong>Download the disk image</strong> — go to <a href="https://bitcoinknots.org/" target="_blank">bitcoinknots.org ↗</a>. Click <strong>Show other download formats</strong> and select the macOS <code>.dmg</code> file.</p>
+                                <img class="zoomable" src="/static/bitcoin-knots-download.png" alt="Bitcoin Knots download page" style="width:100%; max-width:520px; border-radius:8px; border:1px solid #ddd; display:block; margin:10px 0;">
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="ui-step">
+                        <div class="ui-step-label">2</div>
+                        <div class="ui-step-content">
+                            <div data-node="core"><p><strong>Open the .dmg and drag to Applications</strong> — double-click the downloaded file. A window appears with the Bitcoin Core icon and your Applications folder. Drag the icon across into Applications.</p></div>
+                            <div data-node="knots"><p><strong>Open the .dmg and drag to Applications</strong> — double-click the downloaded file. A window appears with the Bitcoin Knots icon and your Applications folder. Drag the icon across into Applications.</p></div>
+                            <div class="ui-mockup" style="max-width:360px;">
+                                <div class="mock-titlebar-mac">
+                                    <span class="mock-dot" style="background:#ff5f57;"></span>
+                                    <span class="mock-dot" style="background:#febc2e;"></span>
+                                    <span class="mock-dot" style="background:#28c840;"></span>
+                                    <span style="flex:1; text-align:center; font-size:0.78rem;"><span data-node="core">Bitcoin Core 28.0</span><span data-node="knots">Bitcoin Knots 28.0</span></span>
+                                </div>
+                                <div class="mock-body" style="display:flex; align-items:center; justify-content:space-around; padding:28px 20px; gap:10px;">
+                                    <div style="text-align:center;">
+                                        <div style="font-size:3rem; margin-bottom:4px;">₿</div>
+                                        <div style="font-size:0.78rem; color:#444;"><span data-node="core">Bitcoin Core</span><span data-node="knots">Bitcoin Knots</span></div>
+                                    </div>
+                                    <div style="font-size:2rem; color:#bbb;">→</div>
+                                    <div style="text-align:center;">
+                                        <div style="font-size:3rem; margin-bottom:4px;">📁</div>
+                                        <div style="font-size:0.78rem; color:#444;">Applications</div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="ui-step">
+                        <div class="ui-step-label">3</div>
+                        <div class="ui-step-content">
+                            <p><strong>Gatekeeper warning</strong> — the first time you open Bitcoin Core, macOS will warn you it is from an unidentified developer. <strong>Do not click Open from a normal double-click.</strong> Instead: find Bitcoin Core in your Applications folder, <strong>right-click</strong> (or Ctrl+click) the icon and choose <strong>Open</strong>. A different dialog appears with an Open button — click it once to allow the app permanently.</p>
+                            <div style="display:flex; gap:10px; flex-wrap:wrap; margin:10px 0; align-items:center;">
+                                <div class="ui-mockup" style="max-width:250px; flex:1; min-width:180px;">
+                                    <div class="mock-titlebar-mac">
+                                        <span class="mock-dot" style="background:#ff5f57;"></span>
+                                        <span class="mock-dot" style="background:#febc2e;"></span>
+                                        <span class="mock-dot" style="background:#28c840;"></span>
+                                    </div>
+                                    <div class="mock-body" style="text-align:center; padding:20px 16px;">
+                                        <div style="font-size:2.2rem; margin-bottom:6px;">₿</div>
+                                        <div style="font-size:0.85rem; font-weight:600; margin-bottom:6px;"><span data-node="core">"Bitcoin Core" can't be opened</span><span data-node="knots">"Bitcoin Knots" can't be opened</span></div>
+                                        <p style="font-size:0.78rem; color:#555; margin:0 0 14px;">Apple cannot verify it is free from malware.</p>
+                                        <button class="mock-btn mock-btn-mac" style="width:100%; padding:7px 0; font-size:0.82rem;">OK</button>
+                                    </div>
+                                </div>
+                                <div style="font-size:1.4rem; color:#bbb; flex:none; text-align:center; align-self:center; line-height:1.4;">→<br><span style="font-size:0.7rem; color:#888;">right-click<br>→ Open</span></div>
+                                <div class="ui-mockup" style="max-width:250px; flex:1; min-width:180px;">
+                                    <div class="mock-titlebar-mac">
+                                        <span class="mock-dot" style="background:#ff5f57;"></span>
+                                        <span class="mock-dot" style="background:#febc2e;"></span>
+                                        <span class="mock-dot" style="background:#28c840;"></span>
+                                    </div>
+                                    <div class="mock-body" style="text-align:center; padding:20px 16px;">
+                                        <div style="font-size:2.2rem; margin-bottom:6px;">₿</div>
+                                        <div style="font-size:0.85rem; font-weight:600; margin-bottom:6px;"><span data-node="core">"Bitcoin Core" is from an unidentified developer</span><span data-node="knots">"Bitcoin Knots" is from an unidentified developer</span></div>
+                                        <p style="font-size:0.78rem; color:#555; margin:0 0 14px;">Are you sure you want to open it?</p>
+                                        <div style="display:flex; gap:8px;">
+                                            <button class="mock-btn mock-btn-grey" style="flex:1; padding:6px 0; font-size:0.78rem;">Cancel</button>
+                                            <button class="mock-btn mock-btn-mac" style="flex:1; padding:6px 0; font-size:0.78rem;">Open</button>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="ui-step">
+                        <div class="ui-step-label">4</div>
+                        <div class="ui-step-content">
+                            <p><strong>Installation complete.</strong> <span data-node="core">Bitcoin Core</span><span data-node="knots">Bitcoin Knots</span> is now in your Applications folder. You do not need to open it now — the next steps use Terminal.</p>
+                            <div class="ui-mockup" style="max-width:320px;">
+                                <div class="mock-titlebar-mac">
+                                    <span class="mock-dot" style="background:#ff5f57;"></span>
+                                    <span class="mock-dot" style="background:#febc2e;"></span>
+                                    <span class="mock-dot" style="background:#28c840;"></span>
+                                    <span style="flex:1; text-align:center; font-size:0.78rem;">Applications</span>
+                                </div>
+                                <div class="mock-body" style="display:flex; gap:18px; padding:16px 20px; flex-wrap:wrap; align-items:center;">
+                                    <div style="text-align:center; opacity:0.35;"><div style="font-size:2.2rem;">🎵</div><div style="font-size:0.72rem; color:#444; margin-top:2px;">Music</div></div>
+                                    <div style="text-align:center; opacity:0.35;"><div style="font-size:2.2rem;">📷</div><div style="font-size:0.72rem; color:#444; margin-top:2px;">Photos</div></div>
+                                    <div style="text-align:center; outline:2px solid #007AFF; border-radius:8px; padding:4px 8px;"><div style="font-size:2.2rem;">₿</div><div style="font-size:0.72rem; color:#444; margin-top:2px;"><span data-node="core">Bitcoin Core</span><span data-node="knots">Bitcoin Knots</span></div></div>
+                                    <div style="text-align:center; opacity:0.35;"><div style="font-size:2.2rem;">🧭</div><div style="font-size:0.72rem; color:#444; margin-top:2px;">Safari</div></div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                </div>
+            </div>
+
+            <div data-os="linux" style="margin-top:12px;">
+                <div class="ui-guide">
+
+                    <div class="ui-step">
+                        <div class="ui-step-label">1</div>
+                        <div class="ui-step-content">
+                            <div data-node="core">
+                                <p><strong>Download the archive</strong> — go to <a href="https://bitcoincore.org/en/download/" target="_blank">bitcoincore.org/en/download ↗</a>. Click <strong>Linux (tgz)</strong> to download the <code>.tar.gz</code>. Most computers use <code>x86_64</code>; ARM devices use <code>aarch64</code>.</p>
+                                <img class="zoomable" src="/static/bitcoin-core-download.png" alt="Bitcoin Core download page" style="width:100%; max-width:520px; border-radius:8px; border:1px solid #ddd; display:block; margin:10px 0;">
+                            </div>
+                            <div data-node="knots">
+                                <p><strong>Download the archive</strong> — go to <a href="https://bitcoinknots.org/" target="_blank">bitcoinknots.org ↗</a>. Click <strong>Show other download formats</strong> and select the <code>.tar.gz</code> for your CPU.</p>
+                                <img class="zoomable" src="/static/bitcoin-knots-download.png" alt="Bitcoin Knots download page" style="width:100%; max-width:520px; border-radius:8px; border:1px solid #ddd; display:block; margin:10px 0;">
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="ui-step">
+                        <div class="ui-step-label">2</div>
+                        <div class="ui-step-content">
+                            <p><strong>Extract and install</strong> — open a terminal in your Downloads folder and run these two commands. The first unpacks the archive; the second copies the programs to <code>/usr/local/bin/</code> so you can run them from anywhere.</p>
+                            <div class="ui-mockup" style="max-width:500px;">
+                                <div class="mock-titlebar-linux">
+                                    <span class="mock-dot" style="background:#ff5f57;"></span>
+                                    <span class="mock-dot" style="background:#febc2e;"></span>
+                                    <span class="mock-dot" style="background:#28c840;"></span>
+                                    <span style="margin-left:6px;">Terminal — ~/Downloads</span>
+                                </div>
+                                <div class="mock-terminal">
+                                    <div><span style="color:#28c840;">user@pc</span><span style="color:#aaa;">:~/Downloads$</span> tar -xzf bitcoin-*.tar.gz</div>
+                                    <div style="color:#666; font-size:0.78rem; padding-left:8px; margin:2px 0;">— extracts the files into a new folder —</div>
+                                    <div><span style="color:#28c840;">user@pc</span><span style="color:#aaa;">:~/Downloads$</span> sudo install -m 0755 -o root -g root -t /usr/local/bin bitcoin-*/bin/*</div>
+                                    <div style="color:#666; font-size:0.78rem; padding-left:8px; margin:2px 0;">— may ask for your password —</div>
+                                    <div style="margin-top:2px;"><span style="color:#28c840;">user@pc</span><span style="color:#aaa;">:~/Downloads$</span> <span>█</span></div>
+                                </div>
+                            </div>
+                            <div style="background:#f8f9fa; padding:8px 10px; border-radius:5px; margin-top:8px; position:relative;">
+                                <pre id="linux-install" style="margin:0; font-size:0.85rem; white-space:pre-wrap;">tar -xzf bitcoin-*.tar.gz
+sudo install -m 0755 -o root -g root -t /usr/local/bin bitcoin-*/bin/*</pre>
+                                <button onclick="copyToClipboard('linux-install')" style="position:absolute; top:8px; right:8px; background:#f7931a; color:white; border:none; padding:4px 8px; border-radius:3px; cursor:pointer; font-size:0.8rem;">Copy</button>
+                            </div>
+                            <p style="font-size:0.85rem; color:#777; margin-top:8px;">The <code>bitcoin-*</code> wildcard works for both Bitcoin Core and Bitcoin Knots — no need to type the full filename.</p>
+                        </div>
+                    </div>
+
+                    <div class="ui-step">
+                        <div class="ui-step-label">3</div>
+                        <div class="ui-step-content">
+                            <p><strong>Verify it worked</strong> — run the command below. If a version number is printed back, the installation is complete. Both Core and Knots use the same binary name (<code>bitcoind</code>).</p>
+                            <div class="ui-mockup" style="max-width:420px;">
+                                <div class="mock-titlebar-linux">
+                                    <span class="mock-dot" style="background:#ff5f57;"></span>
+                                    <span class="mock-dot" style="background:#febc2e;"></span>
+                                    <span class="mock-dot" style="background:#28c840;"></span>
+                                    <span style="margin-left:6px;">Terminal — ~</span>
+                                </div>
+                                <div class="mock-terminal">
+                                    <div><span style="color:#28c840;">user@pc</span><span style="color:#aaa;">:~$</span> bitcoind --version</div>
+                                    <div style="color:#d4d4d4; margin-top:2px;"><span data-node="core">Bitcoin Core version v28.0.0</span><span data-node="knots">Bitcoin Knots version v28.0.knots</span></div>
+                                    <div style="color:#888; font-size:0.78rem;"><span data-node="core">Copyright (C) 2009-2024 The Bitcoin Core developers</span><span data-node="knots">Copyright (C) 2009-2024 The Bitcoin Knots developers</span></div>
+                                    <div style="margin-top:4px;"><span style="color:#28c840;">user@pc</span><span style="color:#aaa;">:~$</span> <span>█</span></div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                </div>
             </div>
 
             <p style="margin-top:28px;"><strong>Step 3 — Find (or create) your Bitcoin data folder</strong></p>
@@ -1245,11 +2017,11 @@ addnode=86.104.228.47:38333</pre>
             <p style="margin-top:28px;"><strong>Step 6 — Start your node</strong></p>
 
             <div style="background:#f0f7ff; border-left:4px solid #2196c4; border-radius:8px; padding:12px 16px; margin:10px 0;">
-                <strong>Prefer a visual interface?</strong> Bitcoin Core and Knots come with a graphical app — you can use it instead of (or alongside) the terminal.
-                <span data-os="windows"> On Windows, find <strong>Bitcoin Core</strong> or <strong>Bitcoin Knots</strong> in the Start menu and open it.</span>
-                <span data-os="macos"> On macOS, open <strong>Bitcoin Core</strong> or <strong>Bitcoin Knots</strong> from your Applications folder.</span>
-                <span data-os="linux"> On Linux, run <code>bitcoin-qt -signet</code> in a terminal to open the graphical interface.</span>
-                A progress bar will show how much of the network has synced. You can still use the terminal commands in the steps below while the GUI is running.
+                <strong>Prefer a visual interface?</strong> Bitcoin Core and Knots include a graphical app (<code>bitcoin-qt</code>) — but it <strong>cannot run at the same time as <code>bitcoind</code></strong>. They share the same data folder and one will block the other with a lock error. Choose one: either start the GUI <em>instead of</em> <code>bitcoind -daemon</code>, or stick with the terminal-only approach below.
+                <ul style="margin:8px 0 0; padding-left:20px; font-size:0.88rem; background:none; border:none;">
+                    <li><span data-os="windows">On Windows, find <strong>Bitcoin Core</strong> or <strong>Bitcoin Knots</strong> in the Start menu.</span><span data-os="macos">On macOS, open it from your Applications folder.</span><span data-os="linux">On Linux: first stop any running daemon with <code>bitcoin-cli -signet stop</code>, then run <code>bitcoin-qt -signet</code>.</span></li>
+                    <li>A progress bar shows sync progress. All the <code>bitcoin-cli</code> commands below work the same whether you use the GUI or daemon.</li>
+                </ul>
             </div>
 
             <p>To start your node in the background without a window, run the command below and press Enter:</p>
@@ -1428,7 +2200,8 @@ addnode=86.104.228.47:38333</pre>
         window.addEventListener('load', function() {
             try {
                 selectOS(localStorage.getItem('preferred-os') || detectOS());
-            } catch(e) { selectOS('windows'); }
+                selectNode(localStorage.getItem('preferred-node') || 'core');
+            } catch(e) { selectOS('windows'); selectNode('core'); }
             if (document.getElementById('successOverlay')) {
                 const addrField = document.getElementById('address');
                 if (addrField) { addrField.value = ''; previewAddress(''); }
@@ -1472,6 +2245,22 @@ addnode=86.104.228.47:38333</pre>
             });
             try { localStorage.setItem('preferred-os', os); } catch(e) {}
         }
+        function selectNode(node) {
+            // Update content visibility
+            document.querySelectorAll('[data-node]').forEach(el => {
+                const isInline = ['SPAN','BUTTON'].includes(el.tagName);
+                el.style.display = el.dataset.node === node ? (isInline ? 'inline' : '') : 'none';
+            });
+            // Highlight selection cards
+            ['core','knots'].forEach(function(n) {
+                var card = document.getElementById('card-' + n);
+                var check = document.getElementById('check-' + n);
+                if (card) card.style.border = n === node ? '2px solid #f7931a' : '2px solid #e0e0e0';
+                if (card) card.style.background = n === node ? '#fffbf5' : '#f8f9fa';
+                if (check) check.style.display = n === node ? 'inline' : 'none';
+            });
+            try { localStorage.setItem('preferred-node', node); } catch(e) {}
+        }
         function toggleInfo(id) {
             const box = document.getElementById(id);
             if (box) box.style.display = box.style.display === 'block' ? 'none' : 'block';
@@ -1506,6 +2295,22 @@ addnode=86.104.228.47:38333</pre>
             el.classList.remove('hidden');
             el.scrollIntoView({ behavior: 'smooth', block: 'start' });
         }
+    </script>
+    <div id="lightbox">
+        <span id="lightbox-close">&#x2715;</span>
+        <img id="lightbox-img" src="" alt="">
+    </div>
+    <script>
+        // Lightbox — runs after DOM is ready
+        (function() {
+            const lb = document.getElementById('lightbox');
+            const lbImg = document.getElementById('lightbox-img');
+            document.querySelectorAll('.zoomable').forEach(function(img) {
+                img.addEventListener('click', function() { lbImg.src = img.src; lb.classList.add('open'); });
+            });
+            lb.addEventListener('click', function() { lb.classList.remove('open'); });
+            document.addEventListener('keydown', function(e) { if (e.key === 'Escape') lb.classList.remove('open'); });
+        })();
     </script>
 </body>
 </html>
@@ -1547,4 +2352,4 @@ def faucet():
     return render_template_string(HTML_TEMPLATE, message=message, hint=hint, success=success, captcha_code=captcha_code)
 
 if __name__ == '__main__':
-    app.run(host='0.0.0.0', port=5000, debug=True)
+    app.run(host='0.0.0.0', port=5000, debug=False)
