@@ -8,11 +8,51 @@ import os
 import random
 import subprocess
 import json
+import sqlite3
+import time
 from flask import Flask, request, render_template_string, session, redirect, url_for, jsonify
 from bitcoinrpc.authproxy import AuthServiceProxy, JSONRPCException
 
 app = Flask(__name__)
 app.secret_key = 'signet-faucet-key-x9f2z'
+
+DB_PATH = '/home/gabor/faucet.db'
+RATE_LIMIT_HOURS = 24
+
+def init_db():
+    conn = sqlite3.connect(DB_PATH)
+    conn.execute('CREATE TABLE IF NOT EXISTS btc_requests (address TEXT, ts INTEGER)')
+    conn.execute('CREATE TABLE IF NOT EXISTS ln_requests (ip TEXT, ts INTEGER)')
+    conn.commit()
+    conn.close()
+
+def is_btc_rate_limited(address):
+    conn = sqlite3.connect(DB_PATH)
+    cutoff = int(time.time()) - RATE_LIMIT_HOURS * 3600
+    row = conn.execute('SELECT ts FROM btc_requests WHERE address=? AND ts>?', (address, cutoff)).fetchone()
+    conn.close()
+    return row is not None
+
+def record_btc_request(address):
+    conn = sqlite3.connect(DB_PATH)
+    conn.execute('INSERT INTO btc_requests (address, ts) VALUES (?,?)', (address, int(time.time())))
+    conn.commit()
+    conn.close()
+
+def is_ln_rate_limited(ip):
+    conn = sqlite3.connect(DB_PATH)
+    cutoff = int(time.time()) - RATE_LIMIT_HOURS * 3600
+    row = conn.execute('SELECT ts FROM ln_requests WHERE ip=? AND ts>?', (ip, cutoff)).fetchone()
+    conn.close()
+    return row is not None
+
+def record_ln_request(ip):
+    conn = sqlite3.connect(DB_PATH)
+    conn.execute('INSERT INTO ln_requests (ip, ts) VALUES (?,?)', (ip, int(time.time())))
+    conn.commit()
+    conn.close()
+
+init_db()
 
 # RPC connection
 RPC_USER = 'devuser'
@@ -658,6 +698,39 @@ HTML_TEMPLATE = """
                 grid-template-columns: 1fr;
             }
         }
+        @media (max-width: 640px) {
+            pre {
+                font-size: 0.72rem;
+                padding: 10px;
+            }
+            details summary {
+                flex-wrap: wrap;
+                gap: 6px;
+            }
+            details summary span[style*="margin-left:auto"] {
+                margin-left: 0 !important;
+            }
+            textarea#ln_invoice {
+                font-size: 0.75rem;
+            }
+            .section-wrapper {
+                padding: 16px;
+            }
+            .container {
+                padding: 16px;
+            }
+            h1 {
+                font-size: 1.4rem;
+            }
+            h2 {
+                font-size: 1.2rem;
+            }
+            .success-popup {
+                padding: 24px 20px;
+                min-width: unset;
+                width: 90vw;
+            }
+        }
         .success-overlay {
             position: fixed;
             top: 0; left: 0; right: 0; bottom: 0;
@@ -1130,7 +1203,7 @@ bitcoind.zmqpubrawtx=tcp://127.0.0.1:28333</pre>
             </form>
             {% if message %}
             <div class="message {{ 'success' if success else 'error' }}">
-                {{ message }}
+                {{ message | safe }}
                 {% if hint %}
                 <button class="hint-btn" onclick="toggleHint()">?</button>
                 {% endif %}
@@ -2648,11 +2721,16 @@ def faucet():
                     if balance < AMOUNT:
                         session['result'] = {'message': f"Insufficient funds. Balance: {balance} signet BTC", 'hint': "The faucet wallet has run low on test coins. Please check back later — it will be topped up soon.", 'success': False}
                     else:
-                        txid = send_coins(rpc, address)
-                        if txid and not txid.startswith('error'):
-                            session['result'] = {'message': f"Sent {AMOUNT} signet BTC to {address}. Transaction ID: {txid}", 'hint': "A Transaction ID is a unique code for your transaction. You can paste it into the Signet Explorer to track it. Your coins will appear once the next block is mined.", 'success': True}
+                        if is_btc_rate_limited(address):
+                            session['result'] = {'message': f"This address already received coins in the last {RATE_LIMIT_HOURS} hours.", 'hint': "Each address can only request coins once per day. Try again tomorrow, or use a different Signet address from your wallet.", 'success': False}
                         else:
-                            session['result'] = {'message': f"Transaction failed: {txid}", 'hint': "Something went wrong while sending the coins. This can happen if the node is busy or restarting. Please try again in a few minutes.", 'success': False}
+                            txid = send_coins(rpc, address)
+                            if txid and not txid.startswith('error'):
+                                record_btc_request(address)
+                                txid_link = f'<a href="https://mempool-signet.planb.academy/tx/{txid}" target="_blank" style="color:#f7931a;word-break:break-all;">{txid[:10]}...{txid[-6:]} ↗</a>'
+                                session['result'] = {'message': f"Sent {AMOUNT} signet BTC to {address}. Transaction ID: {txid_link}", 'hint': "Click the Transaction ID link to watch your transaction confirm in real time on the Signet Explorer. Coins appear once the next block is mined.", 'success': True}
+                            else:
+                                session['result'] = {'message': f"Transaction failed: {txid}", 'hint': "Something went wrong while sending the coins. This can happen if the node is busy or restarting. Please try again in a few minutes.", 'success': False}
                 except Exception as e:
                     session['result'] = {'message': f"Error: {str(e)}", 'hint': "An unexpected error occurred. Please try again. If the problem persists, the node may be offline or restarting.", 'success': False}
         return redirect(url_for('faucet'))
@@ -2703,6 +2781,11 @@ def lightning_pay():
         session['ln_result'] = {'message': 'Incorrect code. Please try again.', 'hint': 'Look at the 4-digit code displayed above the input box and type it exactly.', 'success': False}
         return redirect(url_for('faucet'))
 
+    client_ip = request.headers.get('X-Forwarded-For', request.remote_addr).split(',')[0].strip()
+    if is_ln_rate_limited(client_ip):
+        session['ln_result'] = {'message': f'You already requested Lightning sats in the last {RATE_LIMIT_HOURS} hours.', 'hint': 'Each device can only request sats once per day. Try again tomorrow.', 'success': False}
+        return redirect(url_for('faucet'))
+
     if not invoice:
         session['ln_result'] = {'message': 'Please paste a Lightning invoice.', 'hint': 'Open your Lightning wallet, go to Receive, enter an amount, and copy the invoice string.', 'success': False}
         return redirect(url_for('faucet'))
@@ -2742,6 +2825,7 @@ def lightning_pay():
             session['ln_result'] = {'message': f'Payment failed: {err}', 'hint': 'This can happen if there is no route to your wallet. Make sure your wallet is online and has an open channel to our Signet hub. Try generating a fresh invoice.', 'success': False}
             return redirect(url_for('faucet'))
 
+        record_ln_request(client_ip)
         session['ln_result'] = {'message': f'Sent {num_satoshis:,} sats! Check your Lightning wallet — it should arrive instantly.', 'hint': 'If the sats do not appear, make sure your wallet app is open and online. Lightning payments are instant but require both sides to be connected.', 'success': True}
 
     except subprocess.TimeoutExpired:
