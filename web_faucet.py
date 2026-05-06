@@ -17,7 +17,7 @@ app = Flask(__name__)
 app.secret_key = 'signet-faucet-key-x9f2z'
 
 DB_PATH = '/home/gabor/faucet.db'
-RATE_LIMIT_HOURS = 24
+RATE_LIMIT_HOURS = 0  # Set to 24 before going public
 
 def init_db():
     conn = sqlite3.connect(DB_PATH)
