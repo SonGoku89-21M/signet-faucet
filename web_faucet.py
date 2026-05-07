@@ -1047,7 +1047,7 @@ HTML_TEMPLATE = """
                 <p style="margin:8px 0 6px; color:#555; font-size:0.9rem;">Unlike the Bitcoin faucet where you just need an address, Lightning on Signet requires three things that are all a bit technical:</p>
                 <ul style="margin:0; padding-left:20px; color:#555; font-size:0.9rem; line-height:1.8;">
                     <li>A <strong>Lightning node</strong> running on your computer or server (software that speaks the Lightning protocol)</li>
-                    <li>An <strong>open channel</strong> from your node to our hub — your PlanB instructor sets this up for you</li>
+                    <li>An <strong>open channel</strong> from your node to our hub — you open it yourself using the hub connection string your instructor shares</li>
                     <li>A <strong>wallet app</strong> connected to that node so you can create invoices and see your balance</li>
                 </ul>
                 <p style="margin:10px 0 0; color:#555; font-size:0.9rem;">None of the popular mobile Lightning wallets (Phoenix, Breez, Wallet of Satoshi) support Signet — they only work on real Bitcoin. This is why the setup is more involved.</p>
@@ -1168,24 +1168,98 @@ bitcoind.rpcuser=YOUR_RPC_USER
 bitcoind.rpcpass=YOUR_RPC_PASS
 bitcoind.zmqpubrawblock=tcp://127.0.0.1:28332
 bitcoind.zmqpubrawtx=tcp://127.0.0.1:28333</pre>
-                        <ol start="3" style="padding-left:20px; color:#444; font-size:0.875rem; line-height:1.9; margin:0;">
+                        <ol start="3" style="padding-left:20px; color:#444; font-size:0.875rem; line-height:1.9; margin:0 0 12px;">
                             <li>Start LND by running <code>lnd</code> in a terminal — the first time it will wait for you to create a wallet</li>
-                            <li>In a second terminal, run <code>lncli create</code> and follow the prompts to set a password and generate your seed words (write these down safely)</li>
-                            <li>Find your <strong>node pubkey</strong> (your Lightning address) by running: <code>lncli --lnddir=~/.lnd-signet getinfo | grep identity_pubkey</code> — share this with your PlanB instructor so they can open a channel to you</li>
-                            <li>Install either <a href="https://github.com/Ride-The-Lightning/RTL" target="_blank" style="color:#f7931a;"><strong>RTL</strong></a> or <a href="https://thunderhub.io" target="_blank" style="color:#f7931a;"><strong>ThunderHub</strong></a> and point it at your LND REST port (8080) — both give you a dashboard where you can click <strong>Receive</strong> to create an invoice</li>
+                            <li>In a second terminal, run <code>lncli --lnddir=~/.lnd-signet --rpcserver=localhost:10010 create</code> — set a password and write down your 24 seed words safely</li>
+                            <li>Optional but handy — add this alias to <code>~/.bashrc</code> so you don't have to type the full command every time: <code>alias lns="lncli --lnddir=~/.lnd-signet --rpcserver=localhost:10010"</code></li>
+                            <li>Generate a <strong>funding address</strong> for your LND wallet: <code>lncli --lnddir=~/.lnd-signet --rpcserver=localhost:10010 newaddress p2wkh</code> — copy the address (starts with <code>tb1</code>)</li>
+                            <li>Use the <a href="#" onclick="showSection('faucetSection'); return false;" style="color:#f7931a;">Bitcoin Signet Faucet</a> to send test coins to that address — wait for your instructor to mine a block to confirm it</li>
+                            <li>Check your balance arrived: <code>lncli --lnddir=~/.lnd-signet --rpcserver=localhost:10010 walletbalance</code> — should show <code>"confirmed_balance": "100000"</code></li>
+                            <li>Get the <strong>hub connection string</strong> from your instructor (format: <code>pubkey@ip:9737</code>), then connect: <code>lncli --lnddir=~/.lnd-signet --rpcserver=localhost:10010 connect &lt;HUB_PUBKEY&gt;@&lt;HUB_IP&gt;:9737</code></li>
+                            <li>Open a channel to the hub (50,000 sats is a good starting amount): <code>lncli --lnddir=~/.lnd-signet --rpcserver=localhost:10010 openchannel --node_key=&lt;HUB_PUBKEY&gt; --local_amt=50000</code></li>
+                            <li>Ask your instructor to mine 6 blocks to confirm the channel — then verify it is active: <code>lncli --lnddir=~/.lnd-signet --rpcserver=localhost:10010 listchannels</code> — look for <code>"active": true</code></li>
+                            <li>Install <a href="https://github.com/Ride-The-Lightning/RTL" target="_blank" style="color:#f7931a;"><strong>RTL</strong></a> or <a href="https://thunderhub.io" target="_blank" style="color:#f7931a;"><strong>ThunderHub</strong></a> and point it at your LND REST port (<code>8081</code>) for a visual dashboard — or generate invoices directly from the command line in the next step</li>
                         </ol>
                     </div>
                 </details>
 
             </div>
 
-            <h3 style="margin:0 0 10px;">Final steps once your node and channel are ready</h3>
-            <ol style="padding-left:20px; color:#444; line-height:1.8;">
-                <li>Open your wallet app (Zeus, Alby, or RTL/ThunderHub) and go to <strong>Receive</strong></li>
-                <li>Enter an amount between <strong>1 and 10,000 sats</strong> and create the invoice</li>
-                <li>Copy the invoice — it starts with <code>lnbcrt</code></li>
-                <li><a href="#" onclick="showSection('lightningFaucetSection'); return false;">Go to the Lightning faucet →</a> and paste it there — payment arrives instantly</li>
+            <!-- Quick reference cheat sheet -->
+            <details style="background:#1e1e1e; border-radius:10px; padding:0; overflow:hidden; margin:0 0 20px;">
+                <summary style="padding:14px 18px; cursor:pointer; list-style:none; color:#d4d4d4; font-size:0.9rem; user-select:none; display:flex; align-items:center; gap:8px;">
+                    <span style="color:#f7931a;">$</span> <strong>lncli quick reference</strong> <span style="font-size:0.8rem; color:#888; margin-left:auto;">▼ expand</span>
+                </summary>
+                <div style="padding:0 18px 16px; border-top:1px solid #333;">
+                    <p style="color:#aaa; font-size:0.8rem; margin:10px 0 8px;">Add <code style="color:#f7931a;">alias lns="lncli --lnddir=~/.lnd-signet --rpcserver=localhost:10010"</code> to <code>~/.bashrc</code> and use <code>lns</code> instead of the full command below.</p>
+                    <pre style="color:#d4d4d4; font-size:0.78rem; line-height:1.8; margin:0; white-space:pre-wrap;"># Node info &amp; sync status
+lncli --lnddir=~/.lnd-signet --rpcserver=localhost:10010 getinfo
+
+# On-chain balance (funds available to open channels)
+lncli --lnddir=~/.lnd-signet --rpcserver=localhost:10010 walletbalance
+
+# Lightning channel balance (funds available to send/receive)
+lncli --lnddir=~/.lnd-signet --rpcserver=localhost:10010 channelbalance
+
+# List channels — check "active": true
+lncli --lnddir=~/.lnd-signet --rpcserver=localhost:10010 listchannels
+
+# Create an invoice for 100 sats
+lncli --lnddir=~/.lnd-signet --rpcserver=localhost:10010 addinvoice --amt=100 --memo="test"
+
+# Pay someone else's invoice
+lncli --lnddir=~/.lnd-signet --rpcserver=localhost:10010 payinvoice &lt;BOLT11&gt;
+
+# Unlock wallet after restart
+lncli --lnddir=~/.lnd-signet --rpcserver=localhost:10010 unlock
+
+# Decode a BOLT11 invoice — see what's inside
+lncli --lnddir=~/.lnd-signet --rpcserver=localhost:10010 decodepayreq &lt;BOLT11&gt;</pre>
+                </div>
+            </details>
+
+            <h3 style="margin:0 0 10px;">Final steps — fund, connect, and receive</h3>
+            <ol style="padding-left:20px; color:#444; line-height:1.9; font-size:0.9rem;">
+                <li>Generate your LND funding address: <code>lncli --lnddir=~/.lnd-signet --rpcserver=localhost:10010 newaddress p2wkh</code></li>
+                <li>Go to the <a href="#" onclick="showSection('faucetSection'); return false;" style="color:#f7931a;">Bitcoin Signet Faucet</a> and send coins to that address — ask your instructor to mine a block to confirm</li>
+                <li>Connect to the hub and open a channel (get the hub connection string from your instructor): <code>lncli ... connect &lt;PUBKEY&gt;@&lt;IP&gt;:9737</code> then <code>lncli ... openchannel --node_key=&lt;PUBKEY&gt; --local_amt=50000</code></li>
+                <li>Ask instructor to mine 6 blocks — then verify with <code>lncli ... listchannels</code> → <code>"active": true</code></li>
+                <li>Create an invoice: <code>lncli ... addinvoice --amt=1000 --memo="faucet test"</code> — copy the <code>payment_request</code> value (starts with <code>lnbcrt</code>)</li>
+                <li><a href="#" onclick="showSection('lightningFaucetSection'); return false;">Go to the Lightning faucet →</a> and paste it — payment arrives instantly</li>
             </ol>
+
+            <!-- Troubleshooting -->
+            <details style="background:#f8f9fa; border:1px solid #e0e0e0; border-radius:10px; padding:0; overflow:hidden; margin:20px 0 0;">
+                <summary style="padding:16px 18px; cursor:pointer; list-style:none; display:flex; align-items:center; gap:8px; user-select:none; font-weight:600;">
+                    🔧 Troubleshooting <span style="font-size:0.82rem; color:#aaa; margin-left:auto; font-weight:400;">▼ expand</span>
+                </summary>
+                <div style="padding:0 18px 16px; border-top:1px solid #e8e8e8; display:flex; flex-direction:column; gap:12px; margin-top:12px;">
+                    <div style="background:#fff; border:1px solid #e8e8e8; border-radius:8px; padding:12px 16px; font-size:0.875rem;">
+                        <strong>LND wallet locked after restart</strong>
+                        <p style="margin:4px 0 0; color:#555;">LND locks its wallet every time it restarts. Unlock it before doing anything: <code>lncli --lnddir=~/.lnd-signet --rpcserver=localhost:10010 unlock</code></p>
+                    </div>
+                    <div style="background:#fff; border:1px solid #e8e8e8; border-radius:8px; padding:12px 16px; font-size:0.875rem;">
+                        <strong>"chain backend is still syncing"</strong>
+                        <p style="margin:4px 0 0; color:#555;">LND won't start until Bitcoin Core has fully synced. Check: <code>bitcoin-cli -signet getblockchaininfo | jq '.verificationprogress'</code> — should be very close to 1.0. On our custom Signet the chain is tiny so this is usually instant.</p>
+                    </div>
+                    <div style="background:#fff; border:1px solid #e8e8e8; border-radius:8px; padding:12px 16px; font-size:0.875rem;">
+                        <strong>Can't connect to the hub node</strong>
+                        <p style="margin:4px 0 0; color:#555;">Double-check the pubkey and IP — copy-paste directly from the instructor, no spaces or line breaks. Make sure port <code>9737</code> is not blocked by your firewall. Verify LND is running: <code>lncli --lnddir=~/.lnd-signet --rpcserver=localhost:10010 getinfo</code></p>
+                    </div>
+                    <div style="background:#fff; border:1px solid #e8e8e8; border-radius:8px; padding:12px 16px; font-size:0.875rem;">
+                        <strong>Channel open fails</strong>
+                        <p style="margin:4px 0 0; color:#555;">Check you have enough <em>confirmed</em> on-chain balance: <code>walletbalance</code> — the <code>confirmed_balance</code> must be higher than <code>--local_amt</code>. If funds are unconfirmed, ask the instructor to mine a block. Try a smaller amount: <code>--local_amt=20000</code></p>
+                    </div>
+                    <div style="background:#fff; border:1px solid #e8e8e8; border-radius:8px; padding:12px 16px; font-size:0.875rem;">
+                        <strong>Payment fails — "no route found"</strong>
+                        <p style="margin:4px 0 0; color:#555;">Check your channel is active: <code>listchannels</code> → <code>"active": true</code>. If the channel is pending, the instructor needs to mine more blocks to confirm it. Also check the hub has enough balance on its side to route to you — ask the instructor to rebalance if needed.</p>
+                    </div>
+                    <div style="background:#fff; border:1px solid #e8e8e8; border-radius:8px; padding:12px 16px; font-size:0.875rem;">
+                        <strong>Invoice rejected — "does not start with lnbcrt"</strong>
+                        <p style="margin:4px 0 0; color:#555;">Your LND must be configured with the correct <code>signetchallenge</code> for this Signet. If it is on a different network your invoices will start with a different prefix and won't be accepted. Check your LND startup flags or <code>lnd.conf</code>.</p>
+                    </div>
+                </div>
+            </details>
         </div>
 
         <div class="section-wrapper hidden" id="faucetSection">
