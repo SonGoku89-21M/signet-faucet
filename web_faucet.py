@@ -988,7 +988,8 @@ HTML_TEMPLATE = """
                 <label for="ln_invoice">Lightning Invoice (BOLT11):</label>
                 <textarea id="ln_invoice" name="ln_invoice" placeholder="lnbcrt1..." rows="4" required style="width:100%; box-sizing:border-box; font-family:monospace; font-size:0.82rem; padding:10px 12px; border:1px solid #ddd; border-radius:6px; resize:vertical; margin-bottom:6px;" oninput="previewInvoice(this.value)"></textarea>
                 <div id="invoicePreview" class="addr-preview" style="display:none; margin-bottom:8px;"></div>
-                <p style="font-size:0.85rem; color:#777; margin:0 0 14px;">Your Signet invoice starts with <code>lnbcrt</code>. Set an amount between 1 and 10,000 sats in your wallet before generating it. <a href="#" onclick="showSection('lightningNewUserSection'); return false;" style="font-size:0.82rem;">Don't have a wallet yet?</a></p>
+                <p style="font-size:0.85rem; color:#777; margin:0 0 8px;">Your Signet invoice starts with <code>lnbcrt</code>. Set an amount between 1 and 10,000 sats in your wallet before generating it. <a href="#" onclick="showSection('lightningNewUserSection'); return false;" style="font-size:0.82rem;">Don't have a wallet yet?</a></p>
+                <p style="font-size:0.85rem; color:#777; margin:0 0 14px;">⚡ The same wallet and channel you set up here will also receive your <strong>quiz rewards</strong> — sats paid out automatically when you answer correctly.</p>
                 <p class="captcha-label">Type the code below to confirm you're human:</p>
                 <div class="captcha-box">{{ ln_captcha_code }}</div>
                 <input type="text" id="ln_captcha" name="ln_captcha" placeholder="Enter the 4-digit code" maxlength="4" required autocomplete="off">
@@ -1061,6 +1062,7 @@ HTML_TEMPLATE = """
                     <li>Take <a href="https://planb.academy/en/courses/lightning-network-theory-34bd43ef-6683-4a5c-b239-7cb1e40a4aeb" target="_blank" style="color:#4caf50;">Course 4 — Lightning Network Theory ↗</a> so the concepts below make sense</li>
                     <li>Take <a href="https://planb.academy/en/courses/set-up-your-first-lightning-node-593e483e-1785-4e83-aa7e-32b99056844c" target="_blank" style="color:#4caf50;">Course 5 — Set Up Your First Lightning Node ↗</a> for hands-on node setup</li>
                     <li>Come back here, follow the wallet guide below, and ask your instructor to open a channel</li>
+                    <li>Once your channel is active you can receive from this Lightning faucet — <strong>and earn sats from the quiz too</strong> ⚡ Quiz rewards are paid out automatically to your Lightning wallet when you answer correctly</li>
                 </ol>
             </div>
 
@@ -1098,7 +1100,10 @@ HTML_TEMPLATE = """
                         <span style="font-size:0.82rem; color:#aaa; margin-left:6px;">▼ How to connect</span>
                     </summary>
                     <div style="padding:0 18px 16px; border-top:1px solid #e8e8e8;">
-                        <p style="font-size:0.875rem; color:#555; margin:12px 0 4px;">Zeus is a mobile app that acts as the front-end for your LND node. It does <em>not</em> run a node by itself on Signet — it connects to your existing one over the network.</p>
+                        <a href="https://www.youtube.com/watch?v=hmmehTnV3ys" target="_blank" style="display:flex; align-items:center; gap:10px; background:#ff0000; color:white; border-radius:8px; padding:10px 14px; text-decoration:none; font-weight:600; font-size:0.9rem; margin:14px 0 14px;">
+                            <span style="font-size:1.4rem;">▶</span> Watch the setup video on YouTube ↗
+                        </a>
+                        <p style="font-size:0.875rem; color:#555; margin:0 0 4px;">Zeus is a mobile app that acts as the front-end for your LND node. It does <em>not</em> run a node by itself on Signet — it connects to your existing one over the network.</p>
                         <p style="font-size:0.875rem; color:#555; margin:0 0 12px;"><strong>Before you start:</strong> make sure your LND node is running and reachable from your phone (same Wi-Fi network, or exposed via a domain/VPN).</p>
                         <ol style="padding-left:20px; color:#444; font-size:0.875rem; line-height:1.9; margin:0;">
                             <li>Download Zeus from the <a href="https://zeusln.app" target="_blank" style="color:#f7931a;">App Store or Google Play</a></li>
@@ -1124,7 +1129,10 @@ HTML_TEMPLATE = """
                         <span style="font-size:0.82rem; color:#aaa; margin-left:6px;">▼ How to connect</span>
                     </summary>
                     <div style="padding:0 18px 16px; border-top:1px solid #e8e8e8;">
-                        <p style="font-size:0.875rem; color:#555; margin:12px 0 4px;">Alby is a browser extension that sits in your browser toolbar and connects to your LND node. Good choice if you prefer to work on a desktop computer rather than a phone.</p>
+                        <a href="https://www.youtube.com/watch?v=2Z1BzwxdP4I" target="_blank" style="display:flex; align-items:center; gap:10px; background:#ff0000; color:white; border-radius:8px; padding:10px 14px; text-decoration:none; font-weight:600; font-size:0.9rem; margin:14px 0 14px;">
+                            <span style="font-size:1.4rem;">▶</span> Watch the setup video on YouTube ↗
+                        </a>
+                        <p style="font-size:0.875rem; color:#555; margin:0 0 4px;">Alby is a browser extension that sits in your browser toolbar and connects to your LND node. Good choice if you prefer to work on a desktop computer rather than a phone.</p>
                         <p style="font-size:0.875rem; color:#555; margin:0 0 12px;"><strong>Before you start:</strong> your LND node must be running and reachable from the computer where the browser is installed.</p>
                         <ol style="padding-left:20px; color:#444; font-size:0.875rem; line-height:1.9; margin:0;">
                             <li>Install the Alby extension from <a href="https://getalby.com" target="_blank" style="color:#f7931a;">getalby.com</a> — click Add to Chrome or Add to Firefox</li>
@@ -1148,38 +1156,139 @@ HTML_TEMPLATE = """
                             <a href="https://github.com/Ride-The-Lightning/RTL" target="_blank" onclick="event.stopPropagation()" style="font-size:0.82rem; color:#f7931a; text-decoration:none; white-space:nowrap;">RTL ↗</a>
                             <a href="https://thunderhub.io" target="_blank" onclick="event.stopPropagation()" style="font-size:0.82rem; color:#f7931a; text-decoration:none; white-space:nowrap;">ThunderHub ↗</a>
                         </span>
-                        <span style="font-size:0.82rem; color:#aaa; margin-left:6px;">▼ How to set up</span>
+                        <span style="font-size:0.82rem; color:#aaa; margin-left:6px;">▼ Step-by-step setup</span>
                     </summary>
-                    <div style="padding:0 18px 16px; border-top:1px solid #e8e8e8;">
-                        <p style="font-size:0.875rem; color:#555; margin:12px 0 4px;">This option means running LND (the node software) yourself and managing it through a web dashboard — either RTL or ThunderHub. Both give you a visual interface for channels, payments, and invoices without needing to type commands.</p>
-                        <p style="font-size:0.875rem; color:#555; margin:0 0 12px;"><strong>Before you start:</strong> you need a Bitcoin Signet node already running and synced (like Bitcoin Core on Signet). LND sits on top of it.</p>
-                        <ol style="padding-left:20px; color:#444; font-size:0.875rem; line-height:1.9; margin:0 0 12px;">
-                            <li>Download LND from <a href="https://github.com/lightningnetwork/lnd/releases" target="_blank" style="color:#f7931a;">github.com/lightningnetwork/lnd/releases</a> — pick the zip for your operating system</li>
-                            <li>Create a config file at <code>~/.lnd/lnd.conf</code> — this tells LND to use Signet and where to find the Bitcoin node. Replace <code>YOUR_RPC_USER</code> and <code>YOUR_RPC_PASS</code> with the values from your Bitcoin node config:</li>
-                        </ol>
-                        <pre style="background:#1e1e1e; color:#d4d4d4; padding:12px 14px; border-radius:8px; font-size:0.8rem; overflow-x:auto; margin:0 0 12px;">[Bitcoin]
+                    <div style="padding:0 18px 20px; border-top:1px solid #e8e8e8;">
+                        <a href="https://www.youtube.com/watch?v=KItleddMYFU" target="_blank" style="display:flex; align-items:center; gap:10px; background:#ff0000; color:white; border-radius:8px; padding:10px 14px; text-decoration:none; font-weight:600; font-size:0.9rem; margin:14px 0 14px;">
+                            <span style="font-size:1.4rem;">▶</span> Watch the setup video on YouTube ↗
+                        </a>
+                        <p style="font-size:0.875rem; color:#555; margin:0 0 4px;">LND is the Lightning node software. RTL and ThunderHub are visual web dashboards you can open in a browser to manage it — no command line needed for day-to-day use. Follow the steps below one at a time.</p>
+                        <p style="font-size:0.875rem; color:#555; margin:0 0 16px;"><strong>Before you start:</strong> your Bitcoin Signet node (Bitcoin Core) must already be running and synced. LND connects on top of it.</p>
+
+                        <!-- Step 1 -->
+                        <div style="margin:0 0 20px;">
+                            <p style="font-weight:600; margin:0 0 6px; font-size:0.9rem;">Step 1 — Download LND</p>
+                            <p style="font-size:0.85rem; color:#555; margin:0 0 8px;">Go to <a href="https://github.com/lightningnetwork/lnd/releases" target="_blank" style="color:#f7931a;">github.com/lightningnetwork/lnd/releases</a> and download the zip file for your operating system (look for <strong>linux-amd64</strong>, <strong>darwin-amd64</strong> for Mac, or <strong>windows-amd64</strong>). Extract it — you'll get two programs: <code>lnd</code> and <code>lncli</code>. Move them somewhere in your PATH (e.g. <code>/usr/local/bin/</code>) so you can run them from any terminal.</p>
+                        </div>
+
+                        <!-- Step 2 -->
+                        <div style="margin:0 0 20px;">
+                            <p style="font-weight:600; margin:0 0 6px; font-size:0.9rem;">Step 2 — Create the config file</p>
+                            <p style="font-size:0.85rem; color:#555; margin:0 0 8px;">LND needs a config file to know it should use Signet and where to find your Bitcoin node. Create the file at <code>~/.lnd-signet/lnd.conf</code> with the content below. Replace <code>YOUR_RPC_USER</code> and <code>YOUR_RPC_PASS</code> with the username and password from your <code>bitcoin.conf</code> file.</p>
+                            <div style="position:relative;">
+                                <pre id="ln-lndconf" style="background:#1e1e1e; color:#d4d4d4; padding:12px 14px; border-radius:8px; font-size:0.78rem; overflow-x:auto; margin:0; white-space:pre;">[Bitcoin]
 bitcoin.active=1
 bitcoin.signet=1
 bitcoin.node=bitcoind
+bitcoin.signetchallenge=PASTE_FROM_INSTRUCTOR
 
 [Bitcoind]
 bitcoind.rpchost=127.0.0.1
 bitcoind.rpcuser=YOUR_RPC_USER
 bitcoind.rpcpass=YOUR_RPC_PASS
 bitcoind.zmqpubrawblock=tcp://127.0.0.1:28332
-bitcoind.zmqpubrawtx=tcp://127.0.0.1:28333</pre>
-                        <ol start="3" style="padding-left:20px; color:#444; font-size:0.875rem; line-height:1.9; margin:0 0 12px;">
-                            <li>Start LND by running <code>lnd</code> in a terminal — the first time it will wait for you to create a wallet</li>
-                            <li>In a second terminal, run <code>lncli --lnddir=~/.lnd-signet --rpcserver=localhost:10010 create</code> — set a password and write down your 24 seed words safely</li>
-                            <li>Optional but handy — add this alias to <code>~/.bashrc</code> so you don't have to type the full command every time: <code>alias lns="lncli --lnddir=~/.lnd-signet --rpcserver=localhost:10010"</code></li>
-                            <li>Generate a <strong>funding address</strong> for your LND wallet: <code>lncli --lnddir=~/.lnd-signet --rpcserver=localhost:10010 newaddress p2wkh</code> — copy the address (starts with <code>tb1</code>)</li>
-                            <li>Use the <a href="#" onclick="showSection('faucetSection'); return false;" style="color:#f7931a;">Bitcoin Signet Faucet</a> to send test coins to that address — wait for your instructor to mine a block to confirm it</li>
-                            <li>Check your balance arrived: <code>lncli --lnddir=~/.lnd-signet --rpcserver=localhost:10010 walletbalance</code> — should show <code>"confirmed_balance": "100000"</code></li>
-                            <li>Get the <strong>hub connection string</strong> from your instructor (format: <code>pubkey@ip:9737</code>), then connect: <code>lncli --lnddir=~/.lnd-signet --rpcserver=localhost:10010 connect &lt;HUB_PUBKEY&gt;@&lt;HUB_IP&gt;:9737</code></li>
-                            <li>Open a channel to the hub (50,000 sats is a good starting amount): <code>lncli --lnddir=~/.lnd-signet --rpcserver=localhost:10010 openchannel --node_key=&lt;HUB_PUBKEY&gt; --local_amt=50000</code></li>
-                            <li>Ask your instructor to mine 6 blocks to confirm the channel — then verify it is active: <code>lncli --lnddir=~/.lnd-signet --rpcserver=localhost:10010 listchannels</code> — look for <code>"active": true</code></li>
-                            <li>Install <a href="https://github.com/Ride-The-Lightning/RTL" target="_blank" style="color:#f7931a;"><strong>RTL</strong></a> or <a href="https://thunderhub.io" target="_blank" style="color:#f7931a;"><strong>ThunderHub</strong></a> and point it at your LND REST port (<code>8081</code>) for a visual dashboard — or generate invoices directly from the command line in the next step</li>
-                        </ol>
+bitcoind.zmqpubrawtx=tcp://127.0.0.1:28333
+
+[Application Options]
+lnddir=/home/YOUR_USERNAME/.lnd-signet
+rpclisten=localhost:10010
+restlisten=localhost:8080</pre>
+                                <button onclick="copyToClipboard('ln-lndconf')" style="position:absolute; top:6px; right:8px; background:#f7931a; color:white; border:none; padding:4px 8px; border-radius:3px; cursor:pointer; font-size:0.8rem;">Copy</button>
+                            </div>
+                        </div>
+
+                        <!-- Step 3 -->
+                        <div style="margin:0 0 20px;">
+                            <p style="font-weight:600; margin:0 0 6px; font-size:0.9rem;">Step 3 — Start LND for the first time</p>
+                            <p style="font-size:0.85rem; color:#555; margin:0 0 8px;">Open a terminal and run the command below. LND will start and wait — it won't do anything until you create a wallet in the next step. Keep this terminal open.</p>
+                            <div style="position:relative;">
+                                <pre id="ln-start" style="background:#1e1e1e; color:#d4d4d4; padding:12px 14px; border-radius:8px; font-size:0.78rem; overflow-x:auto; margin:0;">lnd --lnddir=/home/YOUR_USERNAME/.lnd-signet</pre>
+                                <button onclick="copyToClipboard('ln-start')" style="position:absolute; top:6px; right:8px; background:#f7931a; color:white; border:none; padding:4px 8px; border-radius:3px; cursor:pointer; font-size:0.8rem;">Copy</button>
+                            </div>
+                        </div>
+
+                        <!-- Step 4 -->
+                        <div style="margin:0 0 20px;">
+                            <p style="font-weight:600; margin:0 0 6px; font-size:0.9rem;">Step 4 — Create your Lightning wallet</p>
+                            <p style="font-size:0.85rem; color:#555; margin:0 0 8px;">Open a <strong>second</strong> terminal and run the command below. You will be asked to set a password (remember it — you need it every restart) and shown 24 seed words. <strong>Write those words down on paper and keep them safe.</strong> They are the backup for your entire wallet.</p>
+                            <div style="position:relative;">
+                                <pre id="ln-create" style="background:#1e1e1e; color:#d4d4d4; padding:12px 14px; border-radius:8px; font-size:0.78rem; overflow-x:auto; margin:0;">lncli --lnddir=/home/YOUR_USERNAME/.lnd-signet --rpcserver=localhost:10010 create</pre>
+                                <button onclick="copyToClipboard('ln-create')" style="position:absolute; top:6px; right:8px; background:#f7931a; color:white; border:none; padding:4px 8px; border-radius:3px; cursor:pointer; font-size:0.8rem;">Copy</button>
+                            </div>
+                        </div>
+
+                        <!-- Step 5 -->
+                        <div style="margin:0 0 20px;">
+                            <p style="font-weight:600; margin:0 0 6px; font-size:0.9rem;">Step 5 — Add a shortcut (saves typing)</p>
+                            <p style="font-size:0.85rem; color:#555; margin:0 0 8px;">The full <code>lncli</code> command is long. Add this alias to your <code>~/.bashrc</code> file (run the line below, then open a new terminal). After that you can type <code>lns</code> instead of the full command every time.</p>
+                            <div style="position:relative;">
+                                <pre id="ln-alias" style="background:#1e1e1e; color:#d4d4d4; padding:12px 14px; border-radius:8px; font-size:0.78rem; overflow-x:auto; margin:0;">echo 'alias lns="lncli --lnddir=/home/YOUR_USERNAME/.lnd-signet --rpcserver=localhost:10010"' >> ~/.bashrc && source ~/.bashrc</pre>
+                                <button onclick="copyToClipboard('ln-alias')" style="position:absolute; top:6px; right:8px; background:#f7931a; color:white; border:none; padding:4px 8px; border-radius:3px; cursor:pointer; font-size:0.8rem;">Copy</button>
+                            </div>
+                        </div>
+
+                        <!-- Step 6 -->
+                        <div style="margin:0 0 20px;">
+                            <p style="font-weight:600; margin:0 0 6px; font-size:0.9rem;">Step 6 — Get a funding address</p>
+                            <p style="font-size:0.85rem; color:#555; margin:0 0 8px;">LND has its own on-chain Bitcoin wallet separate from Bitcoin Core. You need to fund it before you can open a channel. Run the command below to get a deposit address (it will start with <code>tb1</code>).</p>
+                            <div style="position:relative;">
+                                <pre id="ln-newaddr" style="background:#1e1e1e; color:#d4d4d4; padding:12px 14px; border-radius:8px; font-size:0.78rem; overflow-x:auto; margin:0;">lncli --lnddir=/home/YOUR_USERNAME/.lnd-signet --rpcserver=localhost:10010 newaddress p2wkh</pre>
+                                <button onclick="copyToClipboard('ln-newaddr')" style="position:absolute; top:6px; right:8px; background:#f7931a; color:white; border:none; padding:4px 8px; border-radius:3px; cursor:pointer; font-size:0.8rem;">Copy</button>
+                            </div>
+                            <p style="font-size:0.82rem; color:#888; margin:8px 0 0;">Copy the address from the output, then go to the <a href="#" onclick="showSection('faucetSection'); return false;" style="color:#f7931a;">Bitcoin Signet Faucet</a> and request coins to that address. Ask your instructor to mine a block to confirm the deposit.</p>
+                        </div>
+
+                        <!-- Step 7 -->
+                        <div style="margin:0 0 20px;">
+                            <p style="font-weight:600; margin:0 0 6px; font-size:0.9rem;">Step 7 — Check your balance arrived</p>
+                            <p style="font-size:0.85rem; color:#555; margin:0 0 8px;">After a block is mined, run this to confirm your coins are there. You should see a number greater than 0 under <code>confirmed_balance</code>.</p>
+                            <div style="position:relative;">
+                                <pre id="ln-walbal" style="background:#1e1e1e; color:#d4d4d4; padding:12px 14px; border-radius:8px; font-size:0.78rem; overflow-x:auto; margin:0;">lncli --lnddir=/home/YOUR_USERNAME/.lnd-signet --rpcserver=localhost:10010 walletbalance</pre>
+                                <button onclick="copyToClipboard('ln-walbal')" style="position:absolute; top:6px; right:8px; background:#f7931a; color:white; border:none; padding:4px 8px; border-radius:3px; cursor:pointer; font-size:0.8rem;">Copy</button>
+                            </div>
+                        </div>
+
+                        <!-- Step 8 -->
+                        <div style="margin:0 0 20px;">
+                            <p style="font-weight:600; margin:0 0 6px; font-size:0.9rem;">Step 8 — Connect to the hub</p>
+                            <p style="font-size:0.85rem; color:#555; margin:0 0 8px;">Your instructor will give you a connection string that looks like <code>PUBKEY@IP:9737</code>. This is the address of the Lightning hub node you will open a channel to. Run the command below, replacing <code>PASTE_HUB_CONNECTION_STRING</code> with what you received.</p>
+                            <div style="position:relative;">
+                                <pre id="ln-connect" style="background:#1e1e1e; color:#d4d4d4; padding:12px 14px; border-radius:8px; font-size:0.78rem; overflow-x:auto; margin:0;">lncli --lnddir=/home/YOUR_USERNAME/.lnd-signet --rpcserver=localhost:10010 connect PASTE_HUB_CONNECTION_STRING</pre>
+                                <button onclick="copyToClipboard('ln-connect')" style="position:absolute; top:6px; right:8px; background:#f7931a; color:white; border:none; padding:4px 8px; border-radius:3px; cursor:pointer; font-size:0.8rem;">Copy</button>
+                            </div>
+                        </div>
+
+                        <!-- Step 9 -->
+                        <div style="margin:0 0 20px;">
+                            <p style="font-weight:600; margin:0 0 6px; font-size:0.9rem;">Step 9 — Open a channel</p>
+                            <p style="font-size:0.85rem; color:#555; margin:0 0 8px;">Now open a channel to the hub. This locks some of your on-chain sats into the channel so you can send and receive Lightning payments. Replace <code>PASTE_HUB_PUBKEY</code> with just the pubkey part (everything before the <code>@</code>).</p>
+                            <div style="position:relative;">
+                                <pre id="ln-openchan" style="background:#1e1e1e; color:#d4d4d4; padding:12px 14px; border-radius:8px; font-size:0.78rem; overflow-x:auto; margin:0;">lncli --lnddir=/home/YOUR_USERNAME/.lnd-signet --rpcserver=localhost:10010 openchannel --node_key=PASTE_HUB_PUBKEY --local_amt=50000</pre>
+                                <button onclick="copyToClipboard('ln-openchan')" style="position:absolute; top:6px; right:8px; background:#f7931a; color:white; border:none; padding:4px 8px; border-radius:3px; cursor:pointer; font-size:0.8rem;">Copy</button>
+                            </div>
+                            <p style="font-size:0.82rem; color:#888; margin:8px 0 0;">Ask your instructor to mine 6 blocks to confirm the channel. This usually takes just a few minutes on our Signet.</p>
+                        </div>
+
+                        <!-- Step 10 -->
+                        <div style="margin:0 0 20px;">
+                            <p style="font-weight:600; margin:0 0 6px; font-size:0.9rem;">Step 10 — Check your channel is active</p>
+                            <p style="font-size:0.85rem; color:#555; margin:0 0 8px;">Once 6 blocks are mined, check that the channel shows <code>"active": true</code>. If it still shows <code>false</code>, wait for one more block and try again.</p>
+                            <div style="position:relative;">
+                                <pre id="ln-listchan" style="background:#1e1e1e; color:#d4d4d4; padding:12px 14px; border-radius:8px; font-size:0.78rem; overflow-x:auto; margin:0;">lncli --lnddir=/home/YOUR_USERNAME/.lnd-signet --rpcserver=localhost:10010 listchannels</pre>
+                                <button onclick="copyToClipboard('ln-listchan')" style="position:absolute; top:6px; right:8px; background:#f7931a; color:white; border:none; padding:4px 8px; border-radius:3px; cursor:pointer; font-size:0.8rem;">Copy</button>
+                            </div>
+                        </div>
+
+                        <!-- Step 11 -->
+                        <div style="margin:0 0 8px;">
+                            <p style="font-weight:600; margin:0 0 6px; font-size:0.9rem;">Step 11 — Create an invoice and get paid by the faucet</p>
+                            <p style="font-size:0.85rem; color:#555; margin:0 0 8px;">You're ready! Generate an invoice for 1,000 sats. The output will contain a long string starting with <code>lnbcrt</code> — that is the invoice. Copy the value next to <code>"payment_request"</code>.</p>
+                            <div style="position:relative;">
+                                <pre id="ln-invoice" style="background:#1e1e1e; color:#d4d4d4; padding:12px 14px; border-radius:8px; font-size:0.78rem; overflow-x:auto; margin:0;">lncli --lnddir=/home/YOUR_USERNAME/.lnd-signet --rpcserver=localhost:10010 addinvoice --amt=1000 --memo="faucet test"</pre>
+                                <button onclick="copyToClipboard('ln-invoice')" style="position:absolute; top:6px; right:8px; background:#f7931a; color:white; border:none; padding:4px 8px; border-radius:3px; cursor:pointer; font-size:0.8rem;">Copy</button>
+                            </div>
+                            <p style="font-size:0.82rem; color:#888; margin:8px 0 0;">Then <a href="#" onclick="showSection('lightningFaucetSection'); return false;" style="color:#f7931a;">go to the Lightning faucet →</a> and paste the invoice. Payment arrives in seconds.</p>
+                        </div>
                     </div>
                 </details>
 
@@ -1191,42 +1300,115 @@ bitcoind.zmqpubrawtx=tcp://127.0.0.1:28333</pre>
                     <span style="color:#f7931a;">$</span> <strong>lncli quick reference</strong> <span style="font-size:0.8rem; color:#888; margin-left:auto;">▼ expand</span>
                 </summary>
                 <div style="padding:0 18px 16px; border-top:1px solid #333;">
-                    <p style="color:#aaa; font-size:0.8rem; margin:10px 0 8px;">Add <code style="color:#f7931a;">alias lns="lncli --lnddir=~/.lnd-signet --rpcserver=localhost:10010"</code> to <code>~/.bashrc</code> and use <code>lns</code> instead of the full command below.</p>
-                    <pre style="color:#d4d4d4; font-size:0.78rem; line-height:1.8; margin:0; white-space:pre-wrap;"># Node info &amp; sync status
-lncli --lnddir=~/.lnd-signet --rpcserver=localhost:10010 getinfo
-
-# On-chain balance (funds available to open channels)
-lncli --lnddir=~/.lnd-signet --rpcserver=localhost:10010 walletbalance
-
-# Lightning channel balance (funds available to send/receive)
-lncli --lnddir=~/.lnd-signet --rpcserver=localhost:10010 channelbalance
-
-# List channels — check "active": true
-lncli --lnddir=~/.lnd-signet --rpcserver=localhost:10010 listchannels
-
-# Create an invoice for 100 sats
-lncli --lnddir=~/.lnd-signet --rpcserver=localhost:10010 addinvoice --amt=100 --memo="test"
-
-# Pay someone else's invoice
-lncli --lnddir=~/.lnd-signet --rpcserver=localhost:10010 payinvoice &lt;BOLT11&gt;
-
-# Unlock wallet after restart
-lncli --lnddir=~/.lnd-signet --rpcserver=localhost:10010 unlock
-
-# Decode a BOLT11 invoice — see what's inside
-lncli --lnddir=~/.lnd-signet --rpcserver=localhost:10010 decodepayreq &lt;BOLT11&gt;</pre>
+                    <p style="color:#aaa; font-size:0.8rem; margin:10px 0 12px;">Handy commands — click <strong style="color:#f7931a;">Copy</strong> on any line to grab it.</p>
+                    <div style="display:flex; flex-direction:column; gap:10px;">
+                        <div>
+                            <p style="color:#aaa; font-size:0.75rem; margin:0 0 4px;">Check node info and sync status</p>
+                            <div style="position:relative;">
+                                <pre id="qr-getinfo" style="background:#111; color:#d4d4d4; padding:10px 12px; border-radius:6px; font-size:0.78rem; margin:0; overflow-x:auto;">lncli --lnddir=/home/YOUR_USERNAME/.lnd-signet --rpcserver=localhost:10010 getinfo</pre>
+                                <button onclick="copyToClipboard('qr-getinfo')" style="position:absolute; top:5px; right:6px; background:#f7931a; color:white; border:none; padding:3px 7px; border-radius:3px; cursor:pointer; font-size:0.75rem;">Copy</button>
+                            </div>
+                        </div>
+                        <div>
+                            <p style="color:#aaa; font-size:0.75rem; margin:0 0 4px;">On-chain balance (sats available to open channels)</p>
+                            <div style="position:relative;">
+                                <pre id="qr-walbal" style="background:#111; color:#d4d4d4; padding:10px 12px; border-radius:6px; font-size:0.78rem; margin:0; overflow-x:auto;">lncli --lnddir=/home/YOUR_USERNAME/.lnd-signet --rpcserver=localhost:10010 walletbalance</pre>
+                                <button onclick="copyToClipboard('qr-walbal')" style="position:absolute; top:5px; right:6px; background:#f7931a; color:white; border:none; padding:3px 7px; border-radius:3px; cursor:pointer; font-size:0.75rem;">Copy</button>
+                            </div>
+                        </div>
+                        <div>
+                            <p style="color:#aaa; font-size:0.75rem; margin:0 0 4px;">Lightning balance (sats inside channels, ready to send/receive)</p>
+                            <div style="position:relative;">
+                                <pre id="qr-chanbal" style="background:#111; color:#d4d4d4; padding:10px 12px; border-radius:6px; font-size:0.78rem; margin:0; overflow-x:auto;">lncli --lnddir=/home/YOUR_USERNAME/.lnd-signet --rpcserver=localhost:10010 channelbalance</pre>
+                                <button onclick="copyToClipboard('qr-chanbal')" style="position:absolute; top:5px; right:6px; background:#f7931a; color:white; border:none; padding:3px 7px; border-radius:3px; cursor:pointer; font-size:0.75rem;">Copy</button>
+                            </div>
+                        </div>
+                        <div>
+                            <p style="color:#aaa; font-size:0.75rem; margin:0 0 4px;">List channels — check for "active": true</p>
+                            <div style="position:relative;">
+                                <pre id="qr-listchan" style="background:#111; color:#d4d4d4; padding:10px 12px; border-radius:6px; font-size:0.78rem; margin:0; overflow-x:auto;">lncli --lnddir=/home/YOUR_USERNAME/.lnd-signet --rpcserver=localhost:10010 listchannels</pre>
+                                <button onclick="copyToClipboard('qr-listchan')" style="position:absolute; top:5px; right:6px; background:#f7931a; color:white; border:none; padding:3px 7px; border-radius:3px; cursor:pointer; font-size:0.75rem;">Copy</button>
+                            </div>
+                        </div>
+                        <div>
+                            <p style="color:#aaa; font-size:0.75rem; margin:0 0 4px;">Create an invoice for 1,000 sats</p>
+                            <div style="position:relative;">
+                                <pre id="qr-addinvoice" style="background:#111; color:#d4d4d4; padding:10px 12px; border-radius:6px; font-size:0.78rem; margin:0; overflow-x:auto;">lncli --lnddir=/home/YOUR_USERNAME/.lnd-signet --rpcserver=localhost:10010 addinvoice --amt=1000 --memo="test"</pre>
+                                <button onclick="copyToClipboard('qr-addinvoice')" style="position:absolute; top:5px; right:6px; background:#f7931a; color:white; border:none; padding:3px 7px; border-radius:3px; cursor:pointer; font-size:0.75rem;">Copy</button>
+                            </div>
+                        </div>
+                        <div>
+                            <p style="color:#aaa; font-size:0.75rem; margin:0 0 4px;">Unlock wallet after a restart</p>
+                            <div style="position:relative;">
+                                <pre id="qr-unlock" style="background:#111; color:#d4d4d4; padding:10px 12px; border-radius:6px; font-size:0.78rem; margin:0; overflow-x:auto;">lncli --lnddir=/home/YOUR_USERNAME/.lnd-signet --rpcserver=localhost:10010 unlock</pre>
+                                <button onclick="copyToClipboard('qr-unlock')" style="position:absolute; top:5px; right:6px; background:#f7931a; color:white; border:none; padding:3px 7px; border-radius:3px; cursor:pointer; font-size:0.75rem;">Copy</button>
+                            </div>
+                        </div>
+                        <div>
+                            <p style="color:#aaa; font-size:0.75rem; margin:0 0 4px;">Decode a BOLT11 invoice — see what's inside before paying</p>
+                            <div style="position:relative;">
+                                <pre id="qr-decode" style="background:#111; color:#d4d4d4; padding:10px 12px; border-radius:6px; font-size:0.78rem; margin:0; overflow-x:auto;">lncli --lnddir=/home/YOUR_USERNAME/.lnd-signet --rpcserver=localhost:10010 decodepayreq &lt;BOLT11&gt;</pre>
+                                <button onclick="copyToClipboard('qr-decode')" style="position:absolute; top:5px; right:6px; background:#f7931a; color:white; border:none; padding:3px 7px; border-radius:3px; cursor:pointer; font-size:0.75rem;">Copy</button>
+                            </div>
+                        </div>
+                    </div>
                 </div>
             </details>
 
-            <h3 style="margin:0 0 10px;">Final steps — fund, connect, and receive</h3>
-            <ol style="padding-left:20px; color:#444; line-height:1.9; font-size:0.9rem;">
-                <li>Generate your LND funding address: <code>lncli --lnddir=~/.lnd-signet --rpcserver=localhost:10010 newaddress p2wkh</code></li>
-                <li>Go to the <a href="#" onclick="showSection('faucetSection'); return false;" style="color:#f7931a;">Bitcoin Signet Faucet</a> and send coins to that address — ask your instructor to mine a block to confirm</li>
-                <li>Connect to the hub and open a channel (get the hub connection string from your instructor): <code>lncli ... connect &lt;PUBKEY&gt;@&lt;IP&gt;:9737</code> then <code>lncli ... openchannel --node_key=&lt;PUBKEY&gt; --local_amt=50000</code></li>
-                <li>Ask instructor to mine 6 blocks — then verify with <code>lncli ... listchannels</code> → <code>"active": true</code></li>
-                <li>Create an invoice: <code>lncli ... addinvoice --amt=1000 --memo="faucet test"</code> — copy the <code>payment_request</code> value (starts with <code>lnbcrt</code>)</li>
-                <li><a href="#" onclick="showSection('lightningFaucetSection'); return false;">Go to the Lightning faucet →</a> and paste it — payment arrives instantly</li>
-            </ol>
+            <!-- FAQ -->
+            <details style="background:#f8f9fa; border:1px solid #e0e0e0; border-radius:10px; padding:0; overflow:hidden; margin:0 0 20px;">
+                <summary style="padding:16px 18px; cursor:pointer; list-style:none; display:flex; align-items:center; gap:8px; user-select:none; font-weight:600;">
+                    ❓ Frequently asked questions <span style="font-size:0.82rem; color:#aaa; margin-left:auto; font-weight:400;">▼ expand</span>
+                </summary>
+                <div style="padding:0 18px 16px; border-top:1px solid #e8e8e8; display:flex; flex-direction:column; gap:0; margin-top:12px;">
+
+                    <details style="border-bottom:1px solid #eee; padding:0 0 4px;">
+                        <summary style="cursor:pointer; padding:10px 4px; font-size:0.875rem; font-weight:600; list-style:none; user-select:none;">Why do I need to fund a separate LND wallet? I already have Bitcoin in Bitcoin Core.</summary>
+                        <p style="font-size:0.85rem; color:#555; margin:8px 4px 12px;">LND manages its own on-chain wallet completely separately from Bitcoin Core. Think of Bitcoin Core as your bank account and LND as a prepaid card — you load the card before you can spend on Lightning. They don't share funds.</p>
+                    </details>
+
+                    <details style="border-bottom:1px solid #eee; padding:0 0 4px;">
+                        <summary style="cursor:pointer; padding:10px 4px; font-size:0.875rem; font-weight:600; list-style:none; user-select:none;">What is the difference between walletbalance and channelbalance?</summary>
+                        <p style="font-size:0.85rem; color:#555; margin:8px 4px 12px;"><code>walletbalance</code> shows your <em>on-chain</em> funds — sats sitting in the LND wallet, not yet in any channel. <code>channelbalance</code> shows sats that are <em>inside open channels</em> — those are the ones you can send or receive instantly over Lightning. Until you open a channel, channelbalance will be 0.</p>
+                    </details>
+
+                    <details style="border-bottom:1px solid #eee; padding:0 0 4px;">
+                        <summary style="cursor:pointer; padding:10px 4px; font-size:0.875rem; font-weight:600; list-style:none; user-select:none;">How long does opening a channel take?</summary>
+                        <p style="font-size:0.85rem; color:#555; margin:8px 4px 12px;">Opening a channel is a real Bitcoin transaction, so it needs block confirmations. On our custom Signet your instructor controls the miner, so it can be near-instant — just ask them to mine a few blocks. Typically you need 6 confirmations before the channel becomes active.</p>
+                    </details>
+
+                    <details style="border-bottom:1px solid #eee; padding:0 0 4px;">
+                        <summary style="cursor:pointer; padding:10px 4px; font-size:0.875rem; font-weight:600; list-style:none; user-select:none;">Why can't I use Phoenix, Breez, or other mobile Lightning wallets?</summary>
+                        <p style="font-size:0.85rem; color:#555; margin:8px 4px 12px;">Phoenix, Breez, Muun, and Wallet of Satoshi are built for mainnet Bitcoin only. They have the mainnet Lightning network hardcoded in — there is no way to point them at a custom Signet. That is why we use LND with Zeus or Alby: they let you connect to your own node, which can run on any network including our Signet.</p>
+                    </details>
+
+                    <details style="border-bottom:1px solid #eee; padding:0 0 4px;">
+                        <summary style="cursor:pointer; padding:10px 4px; font-size:0.875rem; font-weight:600; list-style:none; user-select:none;">LND asks for a password every time I restart — is that normal?</summary>
+                        <p style="font-size:0.85rem; color:#555; margin:8px 4px 12px;">Yes, completely normal. LND encrypts your wallet at rest and locks it when the process stops. You need to run <code>lncli ... unlock</code> after every restart and type your wallet password. This is a security feature — without the unlock step your funds cannot be moved even if someone gains access to the server.</p>
+                    </details>
+
+                    <details style="border-bottom:1px solid #eee; padding:0 0 4px;">
+                        <summary style="cursor:pointer; padding:10px 4px; font-size:0.875rem; font-weight:600; list-style:none; user-select:none;">What is the minimum amount I can put in a channel?</summary>
+                        <p style="font-size:0.85rem; color:#555; margin:8px 4px 12px;">LND requires a minimum of 20,000 sats per channel by default. We recommend 50,000 sats to give you enough room to open the channel (which costs a small fee), send a few payments, and still have inbound capacity left to receive from the faucet.</p>
+                    </details>
+
+                    <details style="border-bottom:1px solid #eee; padding:0 0 4px;">
+                        <summary style="cursor:pointer; padding:10px 4px; font-size:0.875rem; font-weight:600; list-style:none; user-select:none;">Payment fails with "no route found" — what should I do?</summary>
+                        <p style="font-size:0.85rem; color:#555; margin:8px 4px 12px;">First check your channel is active: run <code>listchannels</code> and look for <code>"active": true</code>. If the channel shows as pending, more blocks need to be mined. If it's active, the problem might be that the hub doesn't have enough balance on your side to push sats to you — ask your instructor to rebalance or open a channel from the hub to you.</p>
+                    </details>
+
+                    <details style="border-bottom:1px solid #eee; padding:0 0 4px;">
+                        <summary style="cursor:pointer; padding:10px 4px; font-size:0.875rem; font-weight:600; list-style:none; user-select:none;">My invoice starts with lnbc instead of lnbcrt — why is it rejected?</summary>
+                        <p style="font-size:0.85rem; color:#555; margin:8px 4px 12px;"><code>lnbc</code> = mainnet Lightning. <code>lnbcrt</code> = Signet/Regtest Lightning. If your invoice starts with <code>lnbc</code>, your LND is configured for mainnet, not our Signet. Check your <code>lnd.conf</code> — you need <code>bitcoin.signet=1</code> and <code>bitcoin.active=1</code> with the correct <code>signetchallenge</code> value from your instructor.</p>
+                    </details>
+
+                    <details style="padding:0 0 4px;">
+                        <summary style="cursor:pointer; padding:10px 4px; font-size:0.875rem; font-weight:600; list-style:none; user-select:none;">I opened a channel but I can't receive — why?</summary>
+                        <p style="font-size:0.85rem; color:#555; margin:8px 4px 12px;">When <em>you</em> open a channel, all the sats start on your side (called outbound capacity). To <em>receive</em> payments, the other side (the hub) needs to push sats towards you — this is called inbound capacity. The faucet does exactly this: it pays you sats into your channel, which gives you inbound capacity. After the first faucet payment, you'll have both outbound and inbound capacity available.</p>
+                    </details>
+
+                </div>
+            </details>
 
             <!-- Troubleshooting -->
             <details style="background:#f8f9fa; border:1px solid #e0e0e0; border-radius:10px; padding:0; overflow:hidden; margin:20px 0 0;">
